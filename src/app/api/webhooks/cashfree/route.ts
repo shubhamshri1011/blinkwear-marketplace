@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
-// Note: webhook handler uses service-level client if SUPABASE_SERVICE_ROLE_KEY is set,
-// or anon client with RPC security definer.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const cfSecretKey = process.env.CF_SECRET_KEY;
 
 const supabase = createClient(supabaseUrl, serviceKey);
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
+
+    // Verify Cashfree webhook signature if secret key & signature headers are present
+    const signature = req.headers.get('x-webhook-signature');
+    const timestamp = req.headers.get('x-webhook-timestamp');
+
+    if (cfSecretKey && signature && timestamp) {
+      const expectedSignature = crypto
+        .createHmac('sha256', cfSecretKey)
+        .update(timestamp + rawBody)
+        .digest('base64');
+
+      if (expectedSignature !== signature) {
+        console.error('[Cashfree Webhook] Invalid webhook signature detected.');
+        return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+      }
+    }
+
     let payload: any;
     try {
       payload = JSON.parse(rawBody);
