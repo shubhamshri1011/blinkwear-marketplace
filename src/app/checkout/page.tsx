@@ -30,6 +30,35 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
+async function getFunctionErrorMessage(error: any, fallbackMessage: string): Promise<string> {
+  if (!error) return fallbackMessage;
+  try {
+    if (error.context && typeof error.context.json === 'function') {
+      const body = await error.context.json();
+      if (body?.error && typeof body.error === 'string') return body.error;
+      if (body?.message && typeof body.message === 'string') return body.message;
+    }
+  } catch {
+    try {
+      if (error.context && typeof error.context.text === 'function') {
+        const text = await error.context.text();
+        if (text) {
+          try {
+            const parsed = JSON.parse(text);
+            if (parsed?.error) return parsed.error;
+            if (parsed?.message) return parsed.message;
+          } catch {
+            return text;
+          }
+        }
+      }
+    } catch {}
+  }
+  return error.message && error.message !== 'Edge Function returned a non-2xx status code'
+    ? error.message
+    : fallbackMessage;
+}
+
 export default function CheckoutPage() {
   return (
     <Suspense fallback={<div className="max-w-4xl mx-auto py-20 text-center animate-pulse">Loading Checkout...</div>}>
@@ -113,10 +142,17 @@ function CheckoutContent() {
   const activeRentalItems: CartItemWithProduct[] = useMemo(() => {
     if (checkoutType !== 'rental') return [];
     if (cartItemId) {
-      const match = cartItems.find((i) => i.id === cartItemId && i.purchase_type === 'rent');
+      const match = cartItems.find((i) => i.id === cartItemId && i.purchase_type === 'rent' && i.rental_start_date && i.rental_end_date);
       return match ? [match] : [];
     }
-    return cartItems.filter((i) => i.purchase_type === 'rent');
+    // Only include rental items that have dates set — items without dates cannot be checked out
+    return cartItems.filter((i) => i.purchase_type === 'rent' && i.rental_start_date && i.rental_end_date);
+  }, [checkoutType, cartItemId, cartItems]);
+
+  // Items missing dates — shown as a warning to the user
+  const incompletRentalItems: CartItemWithProduct[] = useMemo(() => {
+    if (checkoutType !== 'rental') return [];
+    return cartItems.filter((i) => i.purchase_type === 'rent' && (!i.rental_start_date || !i.rental_end_date));
   }, [checkoutType, cartItemId, cartItems]);
 
   const activeBuyItems: CartItemWithProduct[] = useMemo(() => {
@@ -222,7 +258,12 @@ function CheckoutContent() {
     try {
       if (checkoutType === 'rental') {
         if (activeRentalItems.length === 0) {
-          throw new Error('No rental items selected for checkout.');
+          const hasIncomplete = incompletRentalItems.length > 0;
+          throw new Error(
+            hasIncomplete
+              ? `${incompletRentalItems.length} item(s) in your cart are missing rental dates. Please go back to the cart and select dates before checking out.`
+              : 'No rental items selected for checkout. Please add items to your cart.'
+          );
         }
 
         // Snapshot address details
@@ -259,7 +300,11 @@ function CheckoutContent() {
         );
 
         if (fnErr || !cfOrder) {
-          throw new Error(fnErr?.message || cfOrder?.error || 'Unable to initiate Cashfree payment session.');
+          const detail = await getFunctionErrorMessage(
+            fnErr,
+            cfOrder?.error || 'Unable to initiate Cashfree payment session.'
+          );
+          throw new Error(detail);
         }
 
         // Initialize Cashfree SDK
@@ -287,11 +332,12 @@ function CheckoutContent() {
         );
 
         if (verifyErr || !verifyRes?.success) {
-          throw new Error(
-            verifyErr?.message ||
-              verifyRes?.error ||
+          const detail = await getFunctionErrorMessage(
+            verifyErr,
+            verifyRes?.error ||
               'Payment was not completed. Your shopping bag has been preserved — you can try again.'
           );
+          throw new Error(detail);
         }
 
         await refreshCart();
@@ -324,7 +370,11 @@ function CheckoutContent() {
         );
 
         if (fnErr || !cfOrder) {
-          throw new Error(fnErr?.message || cfOrder?.error || 'Unable to initiate Cashfree payment session.');
+          const detail = await getFunctionErrorMessage(
+            fnErr,
+            cfOrder?.error || 'Unable to initiate Cashfree payment session.'
+          );
+          throw new Error(detail);
         }
 
         const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox';
@@ -350,11 +400,12 @@ function CheckoutContent() {
         );
 
         if (verifyErr || !verifyRes?.success) {
-          throw new Error(
-            verifyErr?.message ||
-              verifyRes?.error ||
+          const detail = await getFunctionErrorMessage(
+            verifyErr,
+            verifyRes?.error ||
               'Payment was not completed. Your shopping bag has been preserved.'
           );
+          throw new Error(detail);
         }
 
         await refreshCart();
@@ -644,6 +695,36 @@ function CheckoutContent() {
                 Edit Bag
               </Link>
             </div>
+
+            {/* Warning for items missing rental dates */}
+            {checkoutType === 'rental' && incompletRentalItems.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  {incompletRentalItems.length} rental item(s) in your bag need dates
+                </p>
+                <p className="text-[11px] text-amber-700 leading-relaxed">
+                  Every rental outfit requires a start and return date before it can be processed. Return to your shopping bag to pick dates.
+                </p>
+                <Link href="/cart" className="inline-block text-[11px] font-bold text-amber-900 underline">
+                  Select Dates in Shopping Bag &rarr;
+                </Link>
+              </div>
+            )}
+
+            {/* Empty state when no rental items are ready */}
+            {checkoutType === 'rental' && activeRentalItems.length === 0 && (
+              <div className="py-8 text-center text-xs text-neutral-500 space-y-2">
+                <p className="font-semibold text-neutral-800">No rental items ready for checkout</p>
+                <p>Items in your cart require rental start and return dates before checking out.</p>
+                <Link
+                  href="/cart"
+                  className="inline-block mt-2 px-4 py-2 rounded-full bg-neutral-900 text-white font-semibold text-xs"
+                >
+                  Go to Shopping Bag
+                </Link>
+              </div>
+            )}
 
             {/* Multi-Item Rental Summary List */}
             {checkoutType === 'rental' && rentalCalculation && (
