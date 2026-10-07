@@ -139,7 +139,7 @@ export type Order = {
   buyer_id: string;
   status: 'pending' | 'completed' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
-  payment_method: 'prepaid' | 'cashfree' | 'razorpay';
+  payment_method: 'prepaid' | 'cashfree';
   order_total: number;
   created_at: string;
   updated_at: string;
@@ -226,12 +226,10 @@ export type RentalBooking = {
   selected_color: string | null;
   status: RentalBookingStatus;
   fulfillment_status: RentalFulfillmentStatus;
-  razorpay_order_id: string | null;
-  razorpay_payment_id: string | null;
   cashfree_order_id: string | null;
   cashfree_payment_id: string | null;
   payment_status: RentalPaymentStatus;
-  payment_method: 'prepaid' | 'cashfree' | 'razorpay';
+  payment_method: 'prepaid' | 'cashfree';
   deposit_refund_status: DepositRefundStatus;
   deposit_refund_amount: number | null;
   deposit_refunded_at: string | null;

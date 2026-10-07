@@ -14,8 +14,7 @@ Luxury fashion rental and pre-loved designer marketplace built with Next.js 16 (
   - Multi-line server-authoritative pricing breakdown (Rental Fee + Refundable Security Deposit + Sanitized Delivery + Prepaid Reverse Pickup + Buyer Platform Fee).
   - Same-city matching checks (Bhopal, Pune).
 - **Payment Processing**:
-  - Cashfree Web JS SDK (`@cashfreepayments/cashfree-js`) integration via Supabase Edge Functions (`create-cashfree-rental-order`, `verify-cashfree-rental-payment`, `create-cashfree-order`, `verify-cashfree-payment`).
-  - Cash on Delivery (COD) fallback via RPCs (`create_cod_rental_booking`, `create_cod_order`).
+  - 100% Prepaid via Cashfree Payments. COD, manual, and offline payment options are strictly prohibited.
 - **Buyer Portal**:
   - Cart with segregated rental items (dates, deposit, pricing) and pre-loved buy items.
   - Saved delivery addresses management (`addresses` table).

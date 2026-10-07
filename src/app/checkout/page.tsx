@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,19 +10,24 @@ import { useCity } from '@/context/CityContext';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Address, CartItemWithProduct, PlatformSettings } from '@/types/database';
+import {
+  calculateMultiRentalOrder,
+  calculateBuyOrder,
+  RentalItemInput,
+  BuyItemInput,
+} from '@/lib/pricing';
 import { load } from '@cashfreepayments/cashfree-js';
 import {
   ShieldCheck,
   CreditCard,
-  Banknote,
   MapPin,
-  Plus,
   Calendar,
   AlertCircle,
   CheckCircle,
   Truck,
   ArrowRight,
   Phone,
+  RotateCcw,
 } from 'lucide-react';
 
 export default function CheckoutPage() {
@@ -62,7 +67,6 @@ function CheckoutContent() {
   });
 
   const [contactPhone, setContactPhone] = useState(profile?.phone || '');
-  const [paymentMethod] = useState<'cashfree'>('cashfree');
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -105,48 +109,50 @@ function CheckoutContent() {
     loadData();
   }, [user, router, supabase]);
 
-  // Selected items to checkout
-  let activeRentalItem: CartItemWithProduct | null = null;
-  let activeBuyItems: CartItemWithProduct[] = [];
-
-  if (checkoutType === 'rental') {
+  // Selected items to checkout (Multi-product support)
+  const activeRentalItems: CartItemWithProduct[] = useMemo(() => {
+    if (checkoutType !== 'rental') return [];
     if (cartItemId) {
-      activeRentalItem = cartItems.find((i) => i.id === cartItemId) || null;
-    } else {
-      activeRentalItem = cartItems.find((i) => i.purchase_type === 'rent') || null;
+      const match = cartItems.find((i) => i.id === cartItemId && i.purchase_type === 'rent');
+      return match ? [match] : [];
     }
-  } else {
-    activeBuyItems = cartItems.filter((i) => i.purchase_type === 'buy');
-  }
+    return cartItems.filter((i) => i.purchase_type === 'rent');
+  }, [checkoutType, cartItemId, cartItems]);
 
-  // Calculate pricing breakdown
-  let subtotal = 0;
-  let depositTotal = 0;
-  let deliveryTotal = platformSettings?.default_delivery_charge ?? 70;
-  let pickupReturnTotal = platformSettings?.pickup_return_charge ?? 70;
-  let buyerFeeTotal = 0;
-  let grandTotal = 0;
+  const activeBuyItems: CartItemWithProduct[] = useMemo(() => {
+    if (checkoutType !== 'buy') return [];
+    if (cartItemId) {
+      const match = cartItems.find((i) => i.id === cartItemId && i.purchase_type === 'buy');
+      return match ? [match] : [];
+    }
+    return cartItems.filter((i) => i.purchase_type === 'buy');
+  }, [checkoutType, cartItemId, cartItems]);
 
-  if (checkoutType === 'rental' && activeRentalItem) {
-    const prod = activeRentalItem.product;
-    const days = activeRentalItem.rental_days || 3;
-    const daily = prod?.rent_price_per_day || 0;
-    subtotal = daily * days;
-    depositTotal = prod?.security_deposit || Math.round(subtotal * ((platformSettings?.default_security_deposit_percentage ?? 20) / 100));
-    deliveryTotal = prod?.delivery_charge ?? (platformSettings?.default_delivery_charge ?? 70);
-    pickupReturnTotal = platformSettings?.pickup_return_charge ?? 70;
-    buyerFeeTotal = Math.round(subtotal * ((platformSettings?.buyer_platform_fee_percentage ?? 5) / 100));
-    grandTotal = subtotal + depositTotal + deliveryTotal + pickupReturnTotal + buyerFeeTotal;
-  } else if (checkoutType === 'buy' && activeBuyItems.length > 0) {
-    subtotal = activeBuyItems.reduce((acc, item) => {
-      const price = item.product?.discount_price || item.product?.sale_price || 0;
-      return acc + price * item.quantity;
-    }, 0);
-    deliveryTotal = platformSettings?.default_delivery_charge ?? 70;
-    pickupReturnTotal = 0;
-    buyerFeeTotal = Math.round(subtotal * ((platformSettings?.buyer_platform_fee_percentage ?? 5) / 100));
-    grandTotal = subtotal + deliveryTotal + buyerFeeTotal;
-  }
+  // Authoritative Pricing Calculations
+  const rentalCalculation = useMemo(() => {
+    if (activeRentalItems.length === 0) return null;
+    const inputs: RentalItemInput[] = activeRentalItems.map((ci) => ({
+      productId: ci.product_id,
+      product: ci.product!,
+      rentalStartDate: ci.rental_start_date!,
+      rentalEndDate: ci.rental_end_date!,
+      selectedSize: ci.selected_size,
+      selectedColor: ci.selected_color,
+    }));
+    return calculateMultiRentalOrder(inputs, platformSettings);
+  }, [activeRentalItems, platformSettings]);
+
+  const buyCalculation = useMemo(() => {
+    if (activeBuyItems.length === 0) return null;
+    const inputs: BuyItemInput[] = activeBuyItems.map((ci) => ({
+      productId: ci.product_id,
+      product: ci.product!,
+      quantity: ci.quantity,
+      selectedSize: ci.selected_size,
+      selectedColor: ci.selected_color,
+    }));
+    return calculateBuyOrder(inputs, platformSettings);
+  }, [activeBuyItems, platformSettings]);
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
 
@@ -190,13 +196,13 @@ function CheckoutContent() {
     }
   };
 
-  // Handle Complete Order / Payment
+  // Handle Complete Order / Payment via Cashfree
   const handleProceedToPayment = async () => {
     setErrorMessage(null);
 
     const cleanPhone = (contactPhone || selectedAddress?.phone || profile?.phone || '').replace(/\D/g, '');
     if (cleanPhone.length < 10) {
-      setErrorMessage('Please enter a valid 10-digit mobile number for order notifications.');
+      setErrorMessage('Please enter a valid 10-digit mobile number for order delivery coordination.');
       return;
     }
 
@@ -214,25 +220,46 @@ function CheckoutContent() {
     setIsProcessing(true);
 
     try {
-      if (checkoutType === 'rental' && activeRentalItem) {
-        // RENTAL FLOW (100% PREPAID)
-        // Cashfree Online Payment
+      if (checkoutType === 'rental') {
+        if (activeRentalItems.length === 0) {
+          throw new Error('No rental items selected for checkout.');
+        }
+
+        // Snapshot address details
+        const addressSnapshot = selectedAddress
+          ? {
+              full_name: selectedAddress.full_name,
+              phone: cleanPhone,
+              address_line1: selectedAddress.address_line1,
+              address_line2: selectedAddress.address_line2,
+              city: selectedAddress.city,
+              state: selectedAddress.state,
+              pincode: selectedAddress.pincode,
+            }
+          : null;
+
+        // Build multi-item rental payload
+        const rentalPayload = {
+          items: activeRentalItems.map((item) => ({
+            cart_item_id: item.id,
+            product_id: item.product_id,
+            rental_start_date: item.rental_start_date,
+            rental_end_date: item.rental_end_date,
+            selected_size: item.selected_size,
+            selected_color: item.selected_color,
+          })),
+          delivery_address: addressSnapshot,
+        };
+
         const { data: cfOrder, error: fnErr } = await supabase.functions.invoke(
           'create-cashfree-rental-order',
           {
-            body: {
-              cart_item_id: activeRentalItem.id,
-              product_id: activeRentalItem.product_id,
-              rental_start_date: activeRentalItem.rental_start_date,
-              rental_end_date: activeRentalItem.rental_end_date,
-              selected_size: activeRentalItem.selected_size,
-              selected_color: activeRentalItem.selected_color,
-            },
+            body: rentalPayload,
           }
         );
 
         if (fnErr || !cfOrder) {
-          throw new Error(fnErr?.message || cfOrder?.error || 'Unable to initiate Cashfree payment.');
+          throw new Error(fnErr?.message || cfOrder?.error || 'Unable to initiate Cashfree payment session.');
         }
 
         // Initialize Cashfree SDK
@@ -249,7 +276,7 @@ function CheckoutContent() {
           redirectTarget: '_modal',
         });
 
-        // Verify payment
+        // Server-side Payment Verification
         const { data: verifyRes, error: verifyErr } = await supabase.functions.invoke(
           'verify-cashfree-rental-payment',
           {
@@ -260,23 +287,44 @@ function CheckoutContent() {
         );
 
         if (verifyErr || !verifyRes?.success) {
-          throw new Error(verifyErr?.message || verifyRes?.error || 'Payment verification pending.');
+          throw new Error(
+            verifyErr?.message ||
+              verifyRes?.error ||
+              'Payment was not completed. Your shopping bag has been preserved — you can try again.'
+          );
         }
 
         await refreshCart();
         router.push(`/checkout/success?type=rental&id=${verifyRes.booking_id}&method=cashfree`);
       } else {
         // BUY FLOW (100% PREPAID)
-        // Cashfree Buy Order
+        if (activeBuyItems.length === 0) {
+          throw new Error('No buy items selected for checkout.');
+        }
+
+        const addressSnapshot = selectedAddress
+          ? {
+              full_name: selectedAddress.full_name,
+              phone: cleanPhone,
+              address_line1: selectedAddress.address_line1,
+              address_line2: selectedAddress.address_line2,
+              city: selectedAddress.city,
+              state: selectedAddress.state,
+              pincode: selectedAddress.pincode,
+            }
+          : null;
+
         const { data: cfOrder, error: fnErr } = await supabase.functions.invoke(
           'create-cashfree-order',
           {
-            body: {},
+            body: {
+              delivery_address: addressSnapshot,
+            },
           }
         );
 
         if (fnErr || !cfOrder) {
-          throw new Error(fnErr?.message || cfOrder?.error || 'Unable to initiate Cashfree payment.');
+          throw new Error(fnErr?.message || cfOrder?.error || 'Unable to initiate Cashfree payment session.');
         }
 
         const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox';
@@ -291,7 +339,7 @@ function CheckoutContent() {
           redirectTarget: '_modal',
         });
 
-        // Verify buy order
+        // Server-side verification for Buy Order
         const { data: verifyRes, error: verifyErr } = await supabase.functions.invoke(
           'verify-cashfree-payment',
           {
@@ -302,7 +350,11 @@ function CheckoutContent() {
         );
 
         if (verifyErr || !verifyRes?.success) {
-          throw new Error(verifyErr?.message || verifyRes?.error || 'Payment verification failed.');
+          throw new Error(
+            verifyErr?.message ||
+              verifyRes?.error ||
+              'Payment was not completed. Your shopping bag has been preserved.'
+          );
         }
 
         await refreshCart();
@@ -310,7 +362,11 @@ function CheckoutContent() {
       }
     } catch (err: unknown) {
       console.error('Checkout error:', err);
-      setErrorMessage(err instanceof Error ? err.message : 'An error occurred during checkout.');
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Payment was not completed. Your shopping bag has been preserved so you can retry safely.'
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -320,12 +376,17 @@ function CheckoutContent() {
     return <div className="max-w-4xl mx-auto py-20 text-center animate-pulse">Loading checkout options...</div>;
   }
 
+  const grandTotal =
+    checkoutType === 'rental'
+      ? rentalCalculation?.grandTotal ?? 0
+      : buyCalculation?.grandTotal ?? 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="pb-6 border-b border-neutral-100 mb-8">
         <h1 className="font-serif text-3xl font-bold text-neutral-900">Secure Checkout</h1>
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-          Fast and encrypted checkout powered by Cashfree Payments
+          100% Prepaid via Cashfree Payments • Guaranteed Sanitization & Doorstep Delivery
         </p>
       </div>
 
@@ -339,7 +400,7 @@ function CheckoutContent() {
               Contact Mobile Number
             </h3>
             <p className="text-xs text-neutral-500">
-              Required for SMS delivery updates and Cashfree verification.
+              Required for delivery coordination and payment verification.
             </p>
             <div className="relative max-w-sm">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-500">
@@ -349,7 +410,7 @@ function CheckoutContent() {
                 type="tel"
                 placeholder="10-digit mobile number"
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(10))}
                 className="w-full pl-12 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-neutral-900"
               />
             </div>
@@ -368,113 +429,112 @@ function CheckoutContent() {
                   onClick={() => setIsAddingAddress(true)}
                   className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add New
+                  + Add New Address
                 </button>
               )}
             </div>
 
-            {/* List saved addresses */}
+            {/* Saved Addresses Radio Group */}
             {!isAddingAddress && addresses.length > 0 && (
               <div className="space-y-3">
-                {addresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    onClick={() => setSelectedAddressId(addr.id)}
-                    className={`p-4 rounded-2xl border text-xs cursor-pointer transition-all flex items-start justify-between ${
-                      selectedAddressId === addr.id
-                        ? 'border-emerald-600 bg-emerald-50/40 shadow-xs'
-                        : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-neutral-900">{addr.full_name}</span>
-                        <span className="bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-sm font-semibold uppercase text-[10px]">
-                          {addr.label}
-                        </span>
-                      </div>
-                      <p className="text-neutral-600 mt-1">
-                        {addr.address_line1}
-                        {addr.address_line2 ? `, ${addr.address_line2}` : ''}
-                      </p>
-                      <p className="text-neutral-600">
-                        {addr.city}, {addr.state} — {addr.pincode}
-                      </p>
-                      <p className="text-neutral-500 mt-1 font-medium">Phone: {addr.phone}</p>
-                    </div>
-
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        selectedAddressId === addr.id
-                          ? 'border-emerald-600 bg-emerald-600'
-                          : 'border-neutral-300'
+                {addresses.map((addr) => {
+                  const isSelected = addr.id === selectedAddressId;
+                  return (
+                    <label
+                      key={addr.id}
+                      className={`block p-4 rounded-2xl border text-xs cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-emerald-600 bg-emerald-50/30 shadow-xs'
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
                       }`}
                     >
-                      {selectedAddressId === addr.id && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name="address_select"
+                            checked={isSelected}
+                            onChange={() => setSelectedAddressId(addr.id)}
+                            className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-neutral-900">{addr.full_name}</span>
+                              <span className="text-[10px] uppercase font-bold tracking-wider bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-md">
+                                {addr.label}
+                              </span>
+                            </div>
+                            <p className="text-neutral-600">
+                              {addr.address_line1}
+                              {addr.address_line2 ? `, ${addr.address_line2}` : ''}
+                            </p>
+                            <p className="text-neutral-500 font-medium">
+                              {addr.city}, {addr.state} — {addr.pincode}
+                            </p>
+                            <p className="text-neutral-500 flex items-center gap-1">
+                              Phone: <span className="font-semibold">{addr.phone}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             )}
 
             {/* Add Address Form */}
             {isAddingAddress && (
-              <form onSubmit={handleSaveAddress} className="space-y-3 pt-2">
-                <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleSaveAddress} className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">
-                      Full Name
-                    </label>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">Full Name</label>
                     <input
                       type="text"
                       required
+                      placeholder="Recipient full name"
                       value={newAddress.full_name}
                       onChange={(e) => setNewAddress({ ...newAddress, full_name: e.target.value })}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">
-                      Contact Phone
-                    </label>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">Phone Number</label>
                     <input
                       type="tel"
                       required
+                      placeholder="10-digit mobile number"
                       value={newAddress.phone}
                       onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-neutral-500 block mb-1">
-                    Street Address & House / Flat No.
-                  </label>
+                  <label className="text-[11px] font-bold text-neutral-500 block mb-1">Address Line 1</label>
                   <input
                     type="text"
                     required
+                    placeholder="House / Flat / Building No., Street Name"
                     value={newAddress.address_line1}
                     onChange={(e) => setNewAddress({ ...newAddress, address_line1: e.target.value })}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                    className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-neutral-500 block mb-1">
-                    Landmark / Area (Optional)
-                  </label>
+                  <label className="text-[11px] font-bold text-neutral-500 block mb-1">Address Line 2 (Optional)</label>
                   <input
                     type="text"
+                    placeholder="Landmark, Area, Floor"
                     value={newAddress.address_line2}
                     onChange={(e) => setNewAddress({ ...newAddress, address_line2: e.target.value })}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                    className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-[11px] font-bold text-neutral-500 block mb-1">City</label>
                     <input
@@ -482,7 +542,7 @@ function CheckoutContent() {
                       required
                       value={newAddress.city}
                       onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>
                   <div>
@@ -492,19 +552,18 @@ function CheckoutContent() {
                       required
                       value={newAddress.state}
                       onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">
-                      Pincode
-                    </label>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">Pincode</label>
                     <input
                       type="text"
                       required
+                      placeholder="6-digit pincode"
                       value={newAddress.pincode}
                       onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs"
+                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>
                 </div>
@@ -512,7 +571,7 @@ function CheckoutContent() {
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     type="submit"
-                    className="py-2.5 px-6 rounded-xl bg-neutral-950 text-white font-bold text-xs"
+                    className="py-2 px-5 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl shadow-xs"
                   >
                     Save Address
                   </button>
@@ -535,7 +594,7 @@ function CheckoutContent() {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm text-neutral-900 flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-emerald-600" />
-                Payment Method
+                Payment Gateway
               </h3>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
                 Prepaid Only
@@ -545,14 +604,14 @@ function CheckoutContent() {
             <div className="p-4 rounded-2xl border border-emerald-600 bg-emerald-50/40 text-xs shadow-xs flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
-                  UPI / Cards
+                  Cashfree
                 </div>
                 <div>
                   <span className="font-bold text-neutral-900 text-sm block">
-                    Prepaid Online Payment (Instant Verification)
+                    Cashfree Payments (Prepaid Only)
                   </span>
                   <span className="text-neutral-500 text-xs mt-0.5 block">
-                    Instant bank confirmation via UPI (GPay, PhonePe, Paytm), Cards, Net Banking
+                    Fast & secure via UPI (GPay, PhonePe, Paytm), Debit/Credit Cards, Net Banking
                   </span>
                 </div>
               </div>
@@ -560,84 +619,162 @@ function CheckoutContent() {
                 <span className="w-1.5 h-1.5 rounded-full bg-white" />
               </div>
             </div>
-            <p className="text-[11px] text-neutral-500 leading-relaxed">
-              To guarantee security and timely doorstep logistics, all BlinkWear rentals and purchases require prepaid payment verification prior to garment dispatch.
-            </p>
+
+            <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[11px] text-neutral-600 space-y-1">
+              <p className="font-semibold text-neutral-800">
+                🛡️ 100% Prepaid Policy — Cash on Delivery is not available.
+              </p>
+              <p className="leading-relaxed">
+                All rental bookings and purchases must be confirmed via Cashfree prior to dispatch. Security deposits are tracked separately and refunded following post-rental garment inspection.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Right Column: Order Summary & Place Order CTA */}
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-neutral-50 rounded-3xl p-6 border border-neutral-200 space-y-6">
-            <h3 className="font-semibold text-sm text-neutral-900">
-              {checkoutType === 'rental' ? 'Rental Booking Summary' : 'Purchase Order Summary'}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-neutral-900">
+                {checkoutType === 'rental'
+                  ? `Rental Summary (${activeRentalItems.length} outfit${activeRentalItems.length > 1 ? 's' : ''})`
+                  : `Purchase Summary (${activeBuyItems.length} item${activeBuyItems.length > 1 ? 's' : ''})`}
+              </h3>
+              <Link href="/cart" className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold">
+                Edit Bag
+              </Link>
+            </div>
 
-            {/* Item summary */}
-            {checkoutType === 'rental' && activeRentalItem && (
-              <div className="flex gap-4 pb-4 border-b border-neutral-200">
-                <div className="relative w-16 aspect-3/4 rounded-xl overflow-hidden bg-neutral-200 shrink-0">
-                  <Image
-                    src={activeRentalItem.product?.product_images?.[0]?.image_url || '/placeholder-dress.jpg'}
-                    alt="Product"
-                    fill
-                    className="object-cover object-top"
-                  />
-                </div>
-                <div className="space-y-1 text-xs">
-                  <h4 className="font-bold text-neutral-900 line-clamp-1">
-                    {activeRentalItem.product?.title}
-                  </h4>
-                  <p className="text-neutral-500">
-                    Rental Duration: {activeRentalItem.rental_days} Days
-                  </p>
-                  <p className="text-emerald-700 font-medium">
-                    {formatDate(activeRentalItem.rental_start_date)} — {formatDate(activeRentalItem.rental_end_date)}
-                  </p>
-                </div>
+            {/* Multi-Item Rental Summary List */}
+            {checkoutType === 'rental' && rentalCalculation && (
+              <div className="space-y-4 pb-4 border-b border-neutral-200">
+                {rentalCalculation.items.map((item, idx) => {
+                  const cartItem = activeRentalItems[idx];
+                  const imgUrl = cartItem?.product?.product_images?.[0]?.image_url || '/placeholder-dress.jpg';
+                  return (
+                    <div key={item.productId} className="flex gap-3 text-xs">
+                      <div className="relative w-14 aspect-3/4 rounded-xl overflow-hidden bg-neutral-200 shrink-0">
+                        <Image src={imgUrl} alt={item.title} fill className="object-cover object-top" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h4 className="font-bold text-neutral-900 line-clamp-1">{item.title}</h4>
+                        <p className="text-neutral-500">
+                          {item.rentalDays} Days ({formatDate(item.rentalStartDate)} → {formatDate(item.rentalEndDate)})
+                        </p>
+                        <div className="flex items-center justify-between text-neutral-700 pt-0.5">
+                          <span>Rent: {formatCurrency(item.rentalAmount)}</span>
+                          <span className="text-emerald-700 font-semibold">
+                            Deposit: {formatCurrency(item.securityDeposit)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {/* Pricing breakdown */}
-            <div className="space-y-2 text-xs text-neutral-600">
-              <div className="flex justify-between">
-                <span>{checkoutType === 'rental' ? 'Rental Fee' : 'Items Subtotal'}</span>
-                <span className="font-semibold text-neutral-900">{formatCurrency(subtotal)}</span>
+            {/* Multi-Item Buy Summary List */}
+            {checkoutType === 'buy' && buyCalculation && (
+              <div className="space-y-4 pb-4 border-b border-neutral-200">
+                {buyCalculation.items.map((item, idx) => {
+                  const cartItem = activeBuyItems[idx];
+                  const imgUrl = cartItem?.product?.product_images?.[0]?.image_url || '/placeholder-dress.jpg';
+                  return (
+                    <div key={item.productId} className="flex gap-3 text-xs">
+                      <div className="relative w-14 aspect-3/4 rounded-xl overflow-hidden bg-neutral-200 shrink-0">
+                        <Image src={imgUrl} alt={item.title} fill className="object-cover object-top" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h4 className="font-bold text-neutral-900 line-clamp-1">{item.title}</h4>
+                        <p className="text-neutral-500">
+                          Qty: {item.quantity} × {formatCurrency(item.unitPrice)}
+                        </p>
+                        <div className="text-right font-bold text-neutral-900">
+                          {formatCurrency(item.lineTotal)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            )}
 
-              {checkoutType === 'rental' && (
-                <div className="flex justify-between text-emerald-800">
-                  <span>Refundable Security Deposit</span>
-                  <span className="font-bold">{formatCurrency(depositTotal)}</span>
-                </div>
+            {/* Pricing Breakdown */}
+            <div className="space-y-2.5 text-xs text-neutral-600">
+              {checkoutType === 'rental' && rentalCalculation && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Rental Subtotal</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(rentalCalculation.rentalSubtotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-emerald-800 bg-emerald-50/60 p-2 rounded-lg">
+                    <span>Refundable Security Deposit (Total)</span>
+                    <span className="font-bold">
+                      {formatCurrency(rentalCalculation.depositTotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Sanitized Doorstep Delivery</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(rentalCalculation.deliveryTotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Prepaid Return Logistics</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(rentalCalculation.pickupReturnTotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Buyer Platform Service Fee</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(rentalCalculation.buyerFeeTotal)}
+                    </span>
+                  </div>
+                </>
               )}
 
-              <div className="flex justify-between">
-                <span>Sanitized Doorstep Delivery</span>
-                <span className="font-semibold text-neutral-900">{formatCurrency(deliveryTotal)}</span>
-              </div>
+              {checkoutType === 'buy' && buyCalculation && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Items Subtotal</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(buyCalculation.subtotal)}
+                    </span>
+                  </div>
 
-              {pickupReturnTotal > 0 && (
-                <div className="flex justify-between">
-                  <span>Prepaid Reverse Pickup</span>
-                  <span className="font-semibold text-neutral-900">{formatCurrency(pickupReturnTotal)}</span>
-                </div>
+                  <div className="flex justify-between">
+                    <span>Standard Delivery</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(buyCalculation.deliveryTotal)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Platform Service Fee</span>
+                    <span className="font-semibold text-neutral-900">
+                      {formatCurrency(buyCalculation.buyerFeeTotal)}
+                    </span>
+                  </div>
+                </>
               )}
-
-              <div className="flex justify-between">
-                <span>Buyer Platform Service Fee</span>
-                <span className="font-semibold text-neutral-900">{formatCurrency(buyerFeeTotal)}</span>
-              </div>
 
               <div className="pt-3 border-t border-neutral-200 flex justify-between text-base font-bold text-neutral-950">
-                <span>Total Amount</span>
+                <span>Total Payable Now</span>
                 <span className="text-emerald-700">{formatCurrency(grandTotal)}</span>
               </div>
             </div>
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{errorMessage}</span>
               </div>
@@ -646,18 +783,18 @@ function CheckoutContent() {
             {/* Submit Button */}
             <button
               type="button"
-              disabled={isProcessing}
+              disabled={isProcessing || grandTotal <= 0}
               onClick={handleProceedToPayment}
               className="w-full py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isProcessing
-                ? 'Connecting to Payment Gateway...'
-                : `Pay ${formatCurrency(grandTotal)} (Prepaid Online)`}
+                ? 'Securing Payment Session...'
+                : `Pay ${formatCurrency(grandTotal)} via Cashfree (Prepaid)`}
             </button>
 
-            <div className="text-[11px] text-neutral-400 text-center flex items-center justify-center gap-1">
+            <div className="text-[11px] text-neutral-400 text-center flex items-center justify-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              256-bit SSL encrypted • Instant bank reconciliation
+              Cashfree 256-bit SSL Encrypted • Instant Verification
             </div>
           </div>
         </div>

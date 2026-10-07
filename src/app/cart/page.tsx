@@ -78,13 +78,22 @@ export default function CartPage() {
         {/* RENTAL ITEMS SECTION */}
         {rentalItems.length > 0 && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
-                Rental Outfits ({rentalItems.length})
-              </span>
-              <span className="text-xs text-neutral-400">
-                • Hospital-grade dry cleaned & doorstep return included
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+                  Rental Outfits ({rentalItems.length})
+                </span>
+                <span className="text-xs text-neutral-400">
+                  • Sanitized & doorstep return included
+                </span>
+              </div>
+
+              <button
+                onClick={() => router.push('/checkout?type=rental')}
+                className="py-2.5 px-6 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto"
+              >
+                Checkout All Rentals ({rentalItems.length}) <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
             <div className="space-y-4">
