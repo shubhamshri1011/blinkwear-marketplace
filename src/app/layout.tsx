@@ -27,6 +27,14 @@ export const metadata: Metadata = {
     'BlinkWear',
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://blinkwear.in'),
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
   openGraph: {
     title: 'BlinkWear.in — Luxury Fashion Rental & Resale',
     description:
@@ -35,6 +43,7 @@ export const metadata: Metadata = {
     siteName: 'BlinkWear.in',
     locale: 'en_IN',
     type: 'website',
+    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Logo' }],
   },
 };
 
