@@ -545,18 +545,18 @@ export default function NewProductListingPage() {
             </label>
 
             {/* URL input */}
-            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <div className="flex items-center gap-2 w-full sm:flex-1 sm:min-w-[200px]">
               <input
                 type="url"
                 placeholder="Or paste image URL..."
                 value={newImageUrl}
                 onChange={(e) => setNewImageUrl(e.target.value)}
-                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-full px-3.5 py-2 text-xs"
+                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-full px-3.5 py-2 text-xs min-w-0"
               />
               <button
                 type="button"
                 onClick={handleAddImageUrl}
-                className="py-2 px-4 rounded-full bg-neutral-950 text-white font-bold text-xs"
+                className="py-2 px-4 rounded-full bg-neutral-950 text-white font-bold text-xs shrink-0"
               >
                 Add URL
               </button>

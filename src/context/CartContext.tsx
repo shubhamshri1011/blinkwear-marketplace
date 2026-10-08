@@ -128,9 +128,39 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         if (existing) {
           const newQty = existing.quantity + (params.quantity || 1);
+          if (product.stock_quantity != null && newQty > product.stock_quantity) {
+            return { success: false, error: `Only ${product.stock_quantity} available in stock` };
+          }
           await supabase
             .from('cart_items')
             .update({ quantity: newQty, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+          await fetchCart();
+          return { success: true };
+        }
+      }
+
+      // Check if duplicate exists for rental item (same product, dates, variant)
+      if (params.purchaseType === 'rent') {
+        const existing = cartItems.find(
+          (c) =>
+            c.product_id === params.productId &&
+            c.purchase_type === 'rent' &&
+            c.selected_size === (params.selectedSize ?? null) &&
+            c.selected_color === (params.selectedColor ?? null) &&
+            (c.rental_start_date ?? null) === (params.rentalStartDate ?? null) &&
+            (c.rental_end_date ?? null) === (params.rentalEndDate ?? null)
+        );
+
+        if (existing) {
+          // Retain or update existing row
+          await supabase
+            .from('cart_items')
+            .update({
+              rental_start_date: params.rentalStartDate ?? existing.rental_start_date,
+              rental_end_date: params.rentalEndDate ?? existing.rental_end_date,
+              updated_at: new Date().toISOString(),
+            })
             .eq('id', existing.id);
           await fetchCart();
           return { success: true };
@@ -149,6 +179,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        // If conflict occurs due to concurrent insert, refresh and succeed gracefully
+        if (error.code === '23505') {
+          await fetchCart();
+          return { success: true };
+        }
         return { success: false, error: error.message };
       }
 

@@ -1,11 +1,30 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductsFilter } from '@/components/product/ProductsFilter';
+import { JsonLd } from '@/components/seo/JsonLd';
 import type { Category, ProductWithImages } from '@/types/database';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Home, ChevronRight } from 'lucide-react';
 
 export const revalidate = 30;
+
+export const metadata: Metadata = {
+  title: 'All Designer Collections & Fashion Rentals',
+  description:
+    'Browse authentic designer bridal lehengas, groom sherwanis, bespoke tuxedos, and luxury gowns available for rent or purchase in Bhopal, Pune, and India on BlinkWear.in.',
+  alternates: {
+    canonical: 'https://blinkwear.in/products',
+  },
+  openGraph: {
+    title: 'All Designer Collections & Fashion Rentals | BlinkWear.in',
+    description:
+      'Browse designer bridal lehengas, groom sherwanis, tuxedos, and gowns available for rent or purchase.',
+    url: 'https://blinkwear.in/products',
+    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Collections' }],
+  },
+};
 
 interface ProductsPageProps {
   searchParams: Promise<{
@@ -123,8 +142,52 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   const products = (productsData || []) as unknown as ProductWithImages[];
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://blinkwear.in',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Collections',
+        item: 'https://blinkwear.in/products',
+      },
+    ],
+  };
+
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'BlinkWear Designer Outfits',
+    itemListElement: products.slice(0, 12).map((prod, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      url: `https://blinkwear.in/products/${prod.id}`,
+      name: prod.title,
+    })),
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <JsonLd data={[breadcrumbSchema, itemListSchema]} />
+
+      {/* Crawlable Semantic Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1.5 text-xs text-neutral-500 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
+        <Link href="/" className="hover:text-neutral-900 inline-flex items-center gap-1">
+          <Home className="w-3.5 h-3.5" /> Home
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        <span className="font-semibold text-neutral-900" aria-current="page">
+          Collections
+        </span>
+      </nav>
+
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-neutral-100 mb-8">
         <div>

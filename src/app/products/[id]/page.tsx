@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { ProductDetailView } from '@/components/product/ProductDetailView';
+import { JsonLd } from '@/components/seo/JsonLd';
 import type { PlatformSettings, ProductWithImages, SellerStorefront } from '@/types/database';
 
 interface ProductPageProps {
@@ -26,16 +27,31 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 
   const primaryImage = product.product_images?.[0]?.image_url;
+  const title = `${product.title}${product.brand ? ` by ${product.brand}` : ''} | BlinkWear Luxury Rental`;
+  const description =
+    product.description ||
+    `Rent ${product.title} by ${product.brand || 'designer'} on BlinkWear.in. 100% sanitized, doorstep delivery & reverse pickup.`;
 
   return {
-    title: `${product.title} | BlinkWear Luxury Rental`,
-    description:
-      product.description ||
-      `Rent ${product.title} by ${product.brand || 'designer'} on BlinkWear.in. 100% sanitized, free reverse pickup.`,
+    title,
+    description,
+    alternates: {
+      canonical: `https://blinkwear.in/products/${id}`,
+    },
     openGraph: {
-      title: product.title,
-      description: product.description || undefined,
-      images: primaryImage ? [{ url: primaryImage }] : [],
+      title,
+      description,
+      url: `https://blinkwear.in/products/${id}`,
+      type: 'website',
+      images: primaryImage
+        ? [{ url: primaryImage, width: 800, height: 1067, alt: product.title }]
+        : [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: primaryImage ? [primaryImage] : ['/icon.png'],
     },
   };
 }
@@ -86,11 +102,78 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }
   }
 
+  // Schema.org Product Schema
+  const images = (product.product_images || []).map((img) => img.image_url);
+  const primaryImg = images[0] || 'https://blinkwear.in/icon.png';
+  const offerPrice = product.rent_price_per_day || product.sale_price || 0;
+
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description || `Rent ${product.title} on BlinkWear.in`,
+    image: images.length > 0 ? images : [primaryImg],
+    brand: {
+      '@type': 'Brand',
+      name: product.brand || 'Designer',
+    },
+    sku: product.id,
+    offers: {
+      '@type': 'Offer',
+      url: `https://blinkwear.in/products/${product.id}`,
+      priceCurrency: 'INR',
+      price: offerPrice,
+      availability:
+        product.status === 'active'
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      itemCondition:
+        product.condition === 'new'
+          ? 'https://schema.org/NewCondition'
+          : 'https://schema.org/UsedCondition',
+    },
+  };
+
+  // Schema.org BreadcrumbList Schema
+  const breadcrumbItems = [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Home',
+      item: 'https://blinkwear.in',
+    },
+  ];
+
+  if (product.category) {
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position: 2,
+      name: product.category.name,
+      item: `https://blinkwear.in/category/${product.category.slug}`,
+    });
+  }
+
+  breadcrumbItems.push({
+    '@type': 'ListItem',
+    position: breadcrumbItems.length + 1,
+    name: product.title,
+    item: `https://blinkwear.in/products/${product.id}`,
+  });
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems,
+  };
+
   return (
-    <ProductDetailView
-      product={product}
-      sellerStorefront={sellerStorefront}
-      platformSettings={platformSettings}
-    />
+    <>
+      <JsonLd data={[productSchema, breadcrumbSchema]} />
+      <ProductDetailView
+        product={product}
+        sellerStorefront={sellerStorefront}
+        platformSettings={platformSettings}
+      />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
@@ -14,19 +14,46 @@ const outfit = Outfit({
   variable: '--font-outfit',
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+  themeColor: '#ffffff',
+};
+
 export const metadata: Metadata = {
-  title: 'BlinkWear.in — Luxury Fashion Rental & Resale Marketplace',
+  metadataBase: new URL('https://blinkwear.in'),
+  title: {
+    default: 'BlinkWear.in — Luxury Fashion Rental & Resale Marketplace',
+    template: '%s | BlinkWear.in',
+  },
   description:
-    'Rent designer lehengas, sherwanis, tuxedos, and luxury gowns for weddings and celebrations in Bhopal, Pune, and across India. 100% sanitized, doorstep delivery & reverse pickup.',
+    'Rent authentic designer bridal lehengas, groom sherwanis, tuxedos, and luxury gowns for weddings and celebrations in Bhopal, Pune, and across India. 100% sanitized, doorstep delivery & reverse pickup.',
   keywords: [
     'fashion rental India',
-    'rent lehenga Bhopal',
-    'rent sherwani Pune',
-    'designer wedding wear rental',
-    'luxury dress rental',
+    'lehenga rental Bhopal',
+    'sherwani rental Pune',
+    'designer bridal wear rental',
+    'luxury tuxedo rental',
+    'wedding dress rental India',
+    'sustainable luxury fashion',
     'BlinkWear',
   ],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://blinkwear.in'),
+  alternates: {
+    canonical: 'https://blinkwear.in',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       { url: '/icon.png', type: 'image/png' },
@@ -38,13 +65,21 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'BlinkWear.in — Luxury Fashion Rental & Resale',
     description:
-      'Rent iconic designer bridal wear, sherwanis, and luxury outfits. Delivered sanitized to your doorstep.',
+      'Rent iconic designer bridal wear, sherwanis, and luxury outfits. Delivered sanitized to your doorstep in Bhopal, Pune, and across India.',
     url: 'https://blinkwear.in',
     siteName: 'BlinkWear.in',
     locale: 'en_IN',
     type: 'website',
-    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Logo' }],
+    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Luxury Fashion' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BlinkWear.in — Luxury Fashion Rental & Resale',
+    description:
+      'Rent iconic designer bridal wear, sherwanis, and luxury outfits. Delivered sanitized to your doorstep.',
+    images: ['/icon.png'],
+  },
+  category: 'fashion',
 };
 
 export default function RootLayout({

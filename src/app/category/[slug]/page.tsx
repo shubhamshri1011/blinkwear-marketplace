@@ -1,10 +1,13 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductsFilter } from '@/components/product/ProductsFilter';
+import { JsonLd } from '@/components/seo/JsonLd';
 import type { Category, ProductWithImages } from '@/types/database';
-import { Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, ChevronRight, Home } from 'lucide-react';
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -19,6 +22,46 @@ interface CategoryPageProps {
 }
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: category } = await supabase
+    .from('categories')
+    .select('name, slug')
+    .eq('slug', slug)
+    .single();
+
+  if (!category) {
+    return {
+      title: 'Category Not Found | BlinkWear',
+    };
+  }
+
+  const title = `${category.name} Rental & Designer Wear`;
+  const description = `Rent authentic designer ${category.name.toLowerCase()} in Bhopal, Pune, and across India on BlinkWear.in. 100% sanitized, doorstep delivery & reverse pickup.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://blinkwear.in/category/${slug}`,
+    },
+    openGraph: {
+      title: `${category.name} Rental | BlinkWear.in`,
+      description,
+      url: `https://blinkwear.in/category/${slug}`,
+      type: 'website',
+      images: [{ url: '/icon.png', width: 512, height: 512, alt: `${category.name} Rental` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${category.name} Rental | BlinkWear.in`,
+      description,
+    },
+  };
+}
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params;
@@ -100,10 +143,64 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const { data: productsData } = await query.limit(48);
   const products = (productsData || []) as unknown as ProductWithImages[];
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://blinkwear.in',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Collections',
+        item: 'https://blinkwear.in/products',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: category.name,
+        item: `https://blinkwear.in/category/${category.slug}`,
+      },
+    ],
+  };
+
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${category.name} Outfits for Rent & Sale`,
+    itemListElement: products.slice(0, 12).map((prod, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      url: `https://blinkwear.in/products/${prod.id}`,
+      name: prod.title,
+    })),
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <JsonLd data={[breadcrumbSchema, itemListSchema]} />
+
+      {/* Crawlable Semantic Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1.5 text-xs text-neutral-500 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
+        <Link href="/" className="hover:text-neutral-900 inline-flex items-center gap-1">
+          <Home className="w-3.5 h-3.5" /> Home
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        <Link href="/products" className="hover:text-neutral-900">
+          Collections
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        <span className="font-semibold text-neutral-900" aria-current="page">
+          {category.name}
+        </span>
+      </nav>
+
       {/* Category Header */}
-      <div className="bg-gradient-to-r from-neutral-900 to-neutral-950 text-white rounded-3xl p-8 sm:p-12 mb-10 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-neutral-900 to-neutral-950 text-white rounded-3xl p-6 sm:p-12 mb-8 sm:mb-10 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 max-w-2xl">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">

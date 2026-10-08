@@ -1,5 +1,22 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { JsonLd } from '@/components/seo/JsonLd';
+
+export const metadata: Metadata = {
+  title: 'Frequently Asked Questions — How Rental Works',
+  description:
+    'Find answers to all your questions about BlinkWear fashion rental: booking duration, sanitization, security deposits, doorstep deliveries, and returns in Bhopal & Pune.',
+  alternates: {
+    canonical: 'https://blinkwear.in/faq',
+  },
+  openGraph: {
+    title: 'Frequently Asked Questions | BlinkWear.in',
+    description:
+      'Everything you need to know about renting designer outfits, deposits, and returns on BlinkWear.',
+    url: 'https://blinkwear.in/faq',
+  },
+};
 
 export default function FAQPage() {
   const faqs = [
@@ -33,8 +50,22 @@ export default function FAQPage() {
     },
   ];
 
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.a,
+      },
+    })),
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10">
+      <JsonLd data={faqSchema} />
       <div className="text-center space-y-2 max-w-xl mx-auto">
         <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
           Help Center

@@ -21,7 +21,26 @@ import {
   Layers,
 } from 'lucide-react';
 
+import type { Metadata } from 'next';
+import { JsonLd } from '@/components/seo/JsonLd';
+
 export const revalidate = 60; // ISR revalidation every 60 seconds
+
+export const metadata: Metadata = {
+  title: 'Rent Designer Lehengas, Sherwanis & Gowns | BlinkWear.in',
+  description:
+    'India\'s premier luxury fashion rental marketplace. Rent bridal lehengas, groom sherwanis, bespoke tuxedos, and gowns in Bhopal & Pune with hospital-grade sanitization and doorstep returns.',
+  alternates: {
+    canonical: 'https://blinkwear.in',
+  },
+  openGraph: {
+    title: 'Rent Designer Lehengas, Sherwanis & Gowns | BlinkWear.in',
+    description:
+      'India\'s premier luxury fashion rental marketplace. Rent bridal lehengas, groom sherwanis, bespoke tuxedos, and gowns with hospital-grade sanitization and doorstep returns.',
+    url: 'https://blinkwear.in',
+    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Luxury Fashion Rental' }],
+  },
+};
 
 async function getHomepageData() {
   const supabase = await createClient();
@@ -142,14 +161,51 @@ async function getHomepageData() {
 export default async function HomePage() {
   const { banners, categories, sections, fallbackFeatured } = await getHomepageData();
 
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'BlinkWear',
+    url: 'https://blinkwear.in',
+    logo: 'https://blinkwear.in/icon.png',
+    description:
+      'India\'s premier luxury fashion rental and resale marketplace for designer bridal lehengas, sherwanis, and luxury occasionwear.',
+    email: 'support@blinkwear.in',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'IN',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      email: 'support@blinkwear.in',
+      contactType: 'customer service',
+      availableLanguage: ['English', 'Hindi'],
+    },
+  };
+
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'BlinkWear',
+    url: 'https://blinkwear.in',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://blinkwear.in/search?q={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
     <div className="flex flex-col gap-12 sm:gap-20 pb-20">
+      <JsonLd data={[organizationSchema, websiteSchema]} />
       {/* 1. Admin Hero Banner Slider */}
       <HeroBannerSlider banners={banners} />
 
       {/* 2. "How BlinkWear Rental Works" - High Trust 3 Steps */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-12 relative z-20">
-        <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-neutral-100">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 sm:-mt-6 lg:-mt-8 relative z-20">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 lg:p-10 shadow-xl border border-neutral-100">
           <div className="text-center max-w-xl mx-auto mb-8 sm:mb-12">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
               Hassle-Free Process
@@ -162,7 +218,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             <div className="flex flex-col items-center text-center p-4">
               <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-xs">
                 <CalendarCheck className="w-7 h-7" />
@@ -226,12 +282,12 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {categories.map((cat, idx) => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className="group relative rounded-3xl overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 text-white border border-neutral-800 shadow-md hover:border-emerald-500/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="group relative rounded-3xl overflow-hidden p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 text-white border border-neutral-800 shadow-md hover:border-emerald-500/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 {/* Decorative subtle ambient backdrop */}
                 <div
@@ -244,7 +300,7 @@ export default async function HomePage() {
                   }`}
                 />
 
-                <div className="relative z-10 flex flex-col justify-between h-28 sm:h-32">
+                <div className="relative z-10 flex flex-col justify-between min-h-[120px] sm:h-32">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">
                       Collection

@@ -53,12 +53,12 @@ export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
     return (
       <section className="relative overflow-hidden bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 text-white pt-12 pb-20 sm:pt-20 sm:pb-28">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 blur-[140px] pointer-events-none rounded-full" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center max-w-3xl">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-6">
             <Sparkles className="w-3.5 h-3.5" />
             India&apos;s Premier Fashion Rental Hub
           </div>
-          <h1 className="font-serif text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
             Own the Moment. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-200 to-amber-200">
               Rent the Outfit.
@@ -180,7 +180,7 @@ export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
             </button>
 
             {/* Dots */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+            <div className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
               {banners.map((_, idx) => (
                 <button
                   key={idx}

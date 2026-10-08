@@ -1,6 +1,22 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Sparkles, ShieldCheck, Heart, Truck, RotateCcw } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'About Us — Sustainable Luxury Fashion Rental',
+  description:
+    'Learn about BlinkWear.in, India\'s premier fashion rental ecosystem. Discover how we make runway-grade bridal and celebratory couture accessible and sustainable.',
+  alternates: {
+    canonical: 'https://blinkwear.in/about',
+  },
+  openGraph: {
+    title: 'About Us | BlinkWear.in',
+    description:
+      'Learn about BlinkWear.in, India\'s premier fashion rental ecosystem. Discover how we make runway-grade bridal and celebratory couture accessible.',
+    url: 'https://blinkwear.in/about',
+  },
+};
 
 export default function AboutPage() {
   return (

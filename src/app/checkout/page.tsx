@@ -461,7 +461,7 @@ function CheckoutContent() {
                 type="tel"
                 placeholder="10-digit mobile number"
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(10))}
+                onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="w-full pl-12 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-neutral-900"
               />
             </div>

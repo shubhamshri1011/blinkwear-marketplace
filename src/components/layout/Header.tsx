@@ -74,30 +74,31 @@ export function Header() {
       />
 
       {/* Top micro-announcement bar */}
-      <div className="bg-neutral-950 text-neutral-300 text-xs py-2 px-4 border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
-              100% Sanitized & Dry-Cleaned Fashion
+      <div className="bg-neutral-950 text-neutral-300 text-xs py-2 px-4 border-b border-neutral-800 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4 min-w-0">
+            <span className="inline-flex items-center gap-1.5 text-emerald-400 font-medium whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">100% Sanitized & Dry-Cleaned Fashion</span>
+              <span className="sm:hidden">Sanitized Fashion</span>
             </span>
             <span className="hidden md:inline text-neutral-500">|</span>
             <span className="hidden md:inline text-neutral-400">
               Free Doorstep Delivery & Reverse Pickup
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button
               onClick={() => setIsCityModalOpen(true)}
-              className="inline-flex items-center gap-1 text-neutral-300 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1 text-neutral-300 hover:text-white transition-colors whitespace-nowrap"
             >
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Delivering to:</span>
-              <span className="font-semibold text-white underline decoration-emerald-500 underline-offset-2">
+              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="hidden sm:inline">Delivering to:</span>
+              <span className="font-semibold text-white underline decoration-emerald-500 underline-offset-2 max-w-[80px] sm:max-w-none truncate">
                 {selectedCity}
               </span>
             </button>
-            <span className="text-neutral-600">|</span>
+            <span className="hidden sm:inline text-neutral-600">|</span>
             <Link
               href="/become-a-seller"
               className="hidden sm:inline text-neutral-400 hover:text-emerald-400 font-medium transition-colors"
@@ -117,12 +118,12 @@ export function Header() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 sm:gap-8">
+          <div className="flex items-center justify-between gap-2 sm:gap-6">
             {/* Mobile menu trigger */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-neutral-700 hover:bg-neutral-100 rounded-lg"
+              className="lg:hidden p-2 -ml-1 text-neutral-700 hover:bg-neutral-100 rounded-lg shrink-0"
               aria-label="Open navigation menu"
             >
               {isMobileMenuOpen ? (
@@ -133,11 +134,11 @@ export function Header() {
             </button>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-1.5 group shrink-0">
-              <span className="font-serif text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950 group-hover:text-neutral-800 transition-colors">
-                Blink<span className="text-emerald-600 font-sans">Wear</span><span className="text-emerald-500 font-sans text-xl sm:text-2xl font-bold">.in</span>
+            <Link href="/" className="flex items-center gap-1.5 group shrink-0 min-w-0">
+              <span className="font-serif text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950 group-hover:text-neutral-800 transition-colors">
+                Blink<span className="text-emerald-600 font-sans">Wear</span><span className="text-emerald-500 font-sans text-lg sm:text-2xl font-bold">.in</span>
               </span>
-              <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest bg-neutral-900 text-neutral-200 px-1.5 py-0.5 rounded-sm">
+              <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest bg-neutral-900 text-neutral-200 px-1.5 py-0.5 rounded-sm shrink-0">
                 Rental
               </span>
             </Link>
@@ -145,7 +146,7 @@ export function Header() {
             {/* Search Bar */}
             <form
               onSubmit={handleSearchSubmit}
-              className="hidden md:flex flex-1 max-w-lg relative"
+              className="hidden md:flex flex-1 max-w-md lg:max-w-lg relative mx-2 lg:mx-4"
             >
               <div className="relative w-full">
                 <input
@@ -166,16 +167,7 @@ export function Header() {
             </form>
 
             {/* Right side actions */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* City quick pill for mobile */}
-              <button
-                onClick={() => setIsCityModalOpen(true)}
-                className="md:hidden flex items-center gap-1 text-xs bg-neutral-100 px-2.5 py-1.5 rounded-full text-neutral-800 font-medium"
-              >
-                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                {selectedCity}
-              </button>
-
+            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
               {/* Wishlist */}
               <Link
                 href="/wishlist"
@@ -371,8 +363,14 @@ export function Header() {
 
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex">
-          <div className="w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto">
+        <div
+          className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            className="w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between">
               <Link
                 href="/"

@@ -103,47 +103,47 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       </Link>
 
       {/* Details info */}
-      <div className="p-4 flex flex-col flex-1 justify-between gap-2">
+      <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between gap-2 min-w-0">
         <div>
           {/* Brand or Category */}
-          <div className="flex items-center justify-between text-xs text-neutral-400 mb-1">
+          <div className="flex items-center justify-between text-xs text-neutral-400 mb-1 gap-1">
             <span className="font-semibold uppercase tracking-wider truncate">
               {product.brand || product.category?.name || 'Designer'}
             </span>
             {product.condition && (
-              <span className="text-[10px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded-sm capitalize">
+              <span className="text-[10px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded-sm capitalize shrink-0">
                 {product.condition.replace('_', ' ')}
               </span>
             )}
           </div>
 
           {/* Title */}
-          <Link href={`/products/${product.id}`} className="group-hover:text-emerald-700 transition-colors">
-            <h3 className="font-medium text-neutral-900 text-sm line-clamp-1 leading-snug">
+          <Link href={`/products/${product.id}`} className="group-hover:text-emerald-700 transition-colors block">
+            <h3 className="font-medium text-neutral-900 text-xs sm:text-sm line-clamp-1 leading-snug">
               {product.title}
             </h3>
           </Link>
         </div>
 
         {/* Pricing area */}
-        <div className="pt-2 border-t border-neutral-100 flex items-baseline justify-between">
+        <div className="pt-2 border-t border-neutral-100 flex flex-wrap items-baseline justify-between gap-1">
           {isRental && product.rent_price_per_day ? (
-            <div>
+            <div className="min-w-0">
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-bold text-neutral-950">
+                <span className="text-sm sm:text-base font-bold text-neutral-950">
                   {formatCurrency(product.rent_price_per_day)}
                 </span>
-                <span className="text-[11px] text-neutral-500 font-medium">/ day</span>
+                <span className="text-[10px] sm:text-[11px] text-neutral-500 font-medium">/ day</span>
               </div>
               {product.security_deposit ? (
-                <p className="text-[10px] text-neutral-400">
-                  Deposit: {formatCurrency(product.security_deposit)} (Refundable)
+                <p className="text-[10px] text-neutral-400 truncate max-w-full">
+                  Deposit: {formatCurrency(product.security_deposit)}
                 </p>
               ) : null}
             </div>
           ) : isSale && product.sale_price ? (
-            <div className="flex items-baseline gap-2">
-              <span className="text-base font-bold text-neutral-950">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-sm sm:text-base font-bold text-neutral-950">
                 {formatCurrency(product.discount_price || product.sale_price)}
               </span>
               {product.discount_price && product.sale_price > product.discount_price && (
@@ -153,7 +153,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
               )}
             </div>
           ) : (
-            <span className="text-sm font-semibold text-neutral-600">Available on request</span>
+            <span className="text-xs font-semibold text-neutral-600">Available on request</span>
           )}
 
           <Link

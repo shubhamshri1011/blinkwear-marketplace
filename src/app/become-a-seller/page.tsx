@@ -505,7 +505,7 @@ export default function BecomeASellerPage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-center gap-4 text-xs font-semibold">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs font-semibold">
         <button
           type="button"
           onClick={() => setStep(1)}

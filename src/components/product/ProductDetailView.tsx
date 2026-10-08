@@ -418,28 +418,34 @@ export function ProductDetailView({
 
           {/* Rent vs Buy Mode Switch (if both available) */}
           {product.listing_type === 'both' && (
-            <div className="grid grid-cols-2 gap-2 p-1.5 bg-neutral-100 rounded-2xl border border-neutral-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1.5 bg-neutral-100 rounded-2xl border border-neutral-200">
               <button
                 type="button"
                 onClick={() => setActiveMode('rent')}
-                className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
+                className={`py-2.5 px-3 text-xs font-bold rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ${
                   activeMode === 'rent'
                     ? 'bg-neutral-950 text-white shadow-xs'
                     : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                Rent for Event (from {formatCurrency(product.rent_price_per_day)}/day)
+                <span>Rent for Event</span>
+                <span className="text-[10px] sm:text-xs font-normal opacity-85">
+                  (from {formatCurrency(product.rent_price_per_day)}/day)
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveMode('buy')}
-                className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
+                className={`py-2.5 px-3 text-xs font-bold rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ${
                   activeMode === 'buy'
                     ? 'bg-neutral-950 text-white shadow-xs'
                     : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                Buy Pre-Loved ({formatCurrency(product.discount_price || product.sale_price)})
+                <span>Buy Pre-Loved</span>
+                <span className="text-[10px] sm:text-xs font-normal opacity-85">
+                  ({formatCurrency(product.discount_price || product.sale_price)})
+                </span>
               </button>
             </div>
           )}
@@ -489,7 +495,7 @@ export function ProductDetailView({
                   </span>
                 </label>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <span className="text-[11px] text-neutral-400 block mb-1">Delivery Date</span>
                     <input

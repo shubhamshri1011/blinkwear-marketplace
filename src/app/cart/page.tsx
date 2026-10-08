@@ -158,7 +158,7 @@ export default function CartPage() {
                     </div>
 
                     {/* Pricing breakdown */}
-                    <div className="md:col-span-3 text-right space-y-1 text-xs">
+                    <div className="md:col-span-3 text-left md:text-right space-y-1 text-xs">
                       <div>
                         <span className="text-neutral-400">Rental Rate: </span>
                         <span className="font-bold text-neutral-950 text-sm">
@@ -174,7 +174,7 @@ export default function CartPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="md:col-span-2 flex flex-col items-end gap-3">
+                    <div className="md:col-span-2 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-3 w-full">
                       <button
                         onClick={() => removeFromCart(item.id)}
                         className="text-neutral-400 hover:text-rose-600 p-2 rounded-full hover:bg-neutral-50 transition-colors"
@@ -185,7 +185,7 @@ export default function CartPage() {
 
                       <button
                         onClick={() => router.push(`/checkout?cart_item_id=${item.id}&type=rental`)}
-                        className="w-full py-2.5 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1"
+                        className="py-2.5 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1 flex-1 md:flex-none md:w-full"
                       >
                         Checkout Rental <ArrowRight className="w-3.5 h-3.5" />
                       </button>
@@ -200,14 +200,14 @@ export default function CartPage() {
         {/* BUY ITEMS SECTION */}
         {buyItems.length > 0 && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider bg-neutral-900 text-white px-3 py-1 rounded-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <span className="text-xs font-bold uppercase tracking-wider bg-neutral-900 text-white px-3 py-1 rounded-full self-start">
                 Pre-Loved Outfits to Purchase ({buyItems.length})
               </span>
 
               <button
                 onClick={() => router.push('/checkout?type=buy')}
-                className="py-2.5 px-6 rounded-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5"
+                className="py-2.5 px-6 rounded-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto"
               >
                 Checkout All Purchases <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -258,7 +258,7 @@ export default function CartPage() {
                       </div>
                     </div>
 
-                    <div className="md:col-span-3 flex items-center justify-end gap-4">
+                    <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-4 w-full">
                       {/* Quantity controls */}
                       <div className="flex items-center border border-neutral-200 rounded-full px-3 py-1">
                         <button
