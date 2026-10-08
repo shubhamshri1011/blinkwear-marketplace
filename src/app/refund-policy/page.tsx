@@ -8,7 +8,7 @@ export default function RefundPolicyPage() {
           Deposit & Refund Policy
         </h1>
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-          Guaranteed automated security deposit refunds and payout terms
+          Deposit refunded after quality check and payout terms
         </p>
       </div>
 

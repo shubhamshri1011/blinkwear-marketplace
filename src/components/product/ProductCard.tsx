@@ -15,6 +15,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
+  if (!product || !product.id) return null;
   const wishlisted = isInWishlist(product.id);
 
   const images = product.product_images && product.product_images.length > 0

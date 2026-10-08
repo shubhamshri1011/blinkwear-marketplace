@@ -307,8 +307,8 @@ function CheckoutContent() {
           throw new Error(detail);
         }
 
-        // Initialize Cashfree SDK
-        const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox';
+        // Initialize Cashfree SDK (server-driven mode from order creation)
+        const cashfreeMode = cfOrder.cf_env === 'production' ? 'production' : 'sandbox';
         const cashfree = await load({ mode: cashfreeMode });
 
         if (!cashfree) {
@@ -377,7 +377,7 @@ function CheckoutContent() {
           throw new Error(detail);
         }
 
-        const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox';
+        const cashfreeMode = cfOrder.cf_env === 'production' ? 'production' : 'sandbox';
         const cashfree = await load({ mode: cashfreeMode });
 
         if (!cashfree) {

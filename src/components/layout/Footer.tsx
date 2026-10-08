@@ -58,7 +58,7 @@ export function Footer() {
               <RotateCcw className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-semibold text-white text-sm">Automated Deposit Refund</h4>
+              <h4 className="font-semibold text-white text-sm">Deposit refunded after quality check</h4>
               <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
                 Security deposits refunded directly to your payment source upon quality check.
               </p>

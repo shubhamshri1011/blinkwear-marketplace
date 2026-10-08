@@ -38,7 +38,6 @@ Create a `.env.local` file in the root directory:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xdxvingqvhyjmupvvxjo.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_CASHFREE_ENV=sandbox # or production
 NEXT_PUBLIC_SITE_URL=https://blinkwear.in
 ```
 

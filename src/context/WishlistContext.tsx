@@ -41,10 +41,39 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from('wishlist_items')
         .select(`
-          *,
+          id,
+          user_id,
+          product_id,
+          created_at,
           product:products (
-            *,
-            product_images (*)
+            id,
+            seller_id,
+            category_id,
+            subcategory_id,
+            title,
+            description,
+            brand,
+            size,
+            color,
+            condition,
+            listing_type,
+            sale_price,
+            discount_price,
+            rent_price_per_day,
+            security_deposit,
+            delivery_charge,
+            city,
+            status,
+            view_count,
+            stock_quantity,
+            featured,
+            featured_sort_order,
+            locked_until,
+            product_images (
+              id,
+              image_url,
+              sort_order
+            )
           )
         `)
         .eq('user_id', user.id)
@@ -53,7 +82,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error fetching wishlist:', error);
       } else if (data) {
-        setWishlistItems(data as unknown as WishlistItemWithProduct[]);
+        const validItems = (data as unknown as WishlistItemWithProduct[]).filter(
+          (item) => item && item.product && item.product.id
+        );
+        setWishlistItems(validItems);
       }
     } catch (err) {
       console.error('Error fetching wishlist:', err);
@@ -101,17 +133,46 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
             product_id: productId,
           })
           .select(`
-            *,
+            id,
+            user_id,
+            product_id,
+            created_at,
             product:products (
-              *,
-              product_images (*)
+              id,
+              seller_id,
+              category_id,
+              subcategory_id,
+              title,
+              description,
+              brand,
+              size,
+              color,
+              condition,
+              listing_type,
+              sale_price,
+              discount_price,
+              rent_price_per_day,
+              security_deposit,
+              delivery_charge,
+              city,
+              status,
+              view_count,
+              stock_quantity,
+              featured,
+              featured_sort_order,
+              locked_until,
+              product_images (
+                id,
+                image_url,
+                sort_order
+              )
             )
           `)
           .single();
 
         if (error) throw error;
 
-        if (data) {
+        if (data && (data as any).product) {
           setWishlistItems((prev) => [data as unknown as WishlistItemWithProduct, ...prev]);
         }
         return { success: true, isWishlisted: true };

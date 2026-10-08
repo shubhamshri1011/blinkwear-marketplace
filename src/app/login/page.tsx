@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Sparkles, Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { safeRedirect } from '@/lib/safeRedirect';
 
 export default function LoginPage() {
   return (
@@ -18,14 +19,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawRedirect = searchParams.get('redirect') || '/';
-  const redirectPath =
-    rawRedirect.startsWith('/') &&
-    !rawRedirect.startsWith('//') &&
-    !rawRedirect.includes('://') &&
-    !rawRedirect.includes('\\')
-      ? rawRedirect
-      : '/';
+  const redirectPath = safeRedirect(searchParams.get('redirect'));
   const { refreshProfile } = useAuth();
   const supabase = createClient();
 

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useCity } from '@/context/CityContext';
 import { Sparkles, Mail, Lock, User, Phone, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
+import { safeRedirect } from '@/lib/safeRedirect';
 
 export default function RegisterPage() {
   return (
@@ -19,14 +20,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawRedirect = searchParams.get('redirect') || '/';
-  const redirectPath =
-    rawRedirect.startsWith('/') &&
-    !rawRedirect.startsWith('//') &&
-    !rawRedirect.includes('://') &&
-    !rawRedirect.includes('\\')
-      ? rawRedirect
-      : '/';
+  const redirectPath = safeRedirect(searchParams.get('redirect'));
   const { refreshProfile } = useAuth();
   const { selectedCity, availableCities } = useCity();
   const supabase = createClient();

@@ -36,7 +36,11 @@ export default function RentalsPage() {
           .select(`
             *,
             product:products (
-              *,
+              id, seller_id, category_id, subcategory_id, title, description, brand,
+              size, color, condition, listing_type, sale_price, discount_price,
+              rent_price_per_day, security_deposit, delivery_charge, city, status,
+              view_count, stock_quantity, min_rental_days, max_rental_days, search_tags,
+              video_url, featured, featured_sort_order, locked_until, created_at, updated_at,
               product_images (*)
             )
           `)

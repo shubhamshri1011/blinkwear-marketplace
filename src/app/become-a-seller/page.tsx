@@ -245,9 +245,29 @@ export default function BecomeASellerPage() {
     );
   }
 
-  // Upload a document file to seller-assets bucket
+  // Upload a document file to seller-assets bucket (private bucket)
+  const ALLOWED_KYC_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_KYC_SIZE = 5 * 1024 * 1024; // 5 MB
+
   const uploadDoc = async (docFile: DocFile, docName: string): Promise<string | null> => {
     if (!user) return null;
+
+    // Client-side validation: MIME type
+    if (!ALLOWED_KYC_TYPES.includes(docFile.file.type)) {
+      setErrorMessage(
+        `"${docFile.file.name}" is not a supported format. Please upload a JPEG, PNG, or WebP image. PDFs and other document formats are not accepted — take a photo or scan of your document instead.`
+      );
+      return null;
+    }
+
+    // Client-side validation: file size
+    if (docFile.file.size > MAX_KYC_SIZE) {
+      setErrorMessage(
+        `"${docFile.file.name}" exceeds the 5 MB size limit. Please compress or resize the image and try again.`
+      );
+      return null;
+    }
+
     const ext = docFile.file.name.split('.').pop() || 'jpg';
     const path = `${user.id}/kyc/${docName}_${Date.now()}.${ext}`;
     const { data, error } = await supabase.storage
@@ -258,8 +278,9 @@ export default function BecomeASellerPage() {
       console.error(`Error uploading ${docName}:`, error);
       return null;
     }
-    const { data: pub } = supabase.storage.from('seller-assets').getPublicUrl(path);
-    return pub.publicUrl;
+
+    // Store storage path in DB (never temporary signed URLs)
+    return path;
   };
 
   const handleStep1Next = (e: React.FormEvent) => {
@@ -400,7 +421,7 @@ export default function BecomeASellerPage() {
             business_type: businessType,
             store_description: storeDescription.trim() || null,
             pan_number: cleanPan,
-            logo_url: JSON.stringify(kycMeta),
+            kyc_docs: kycMeta,
             is_active: false,
           })
           .eq('id', user.id);
@@ -419,7 +440,7 @@ export default function BecomeASellerPage() {
           business_type: businessType,
           store_description: storeDescription.trim() || null,
           pan_number: cleanPan,
-          logo_url: JSON.stringify(kycMeta),
+          kyc_docs: kycMeta,
           is_active: false,
         });
         sellerError = error;

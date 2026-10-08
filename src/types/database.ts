@@ -293,6 +293,7 @@ export type SellerProfile = {
   store_description: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  kyc_docs?: Record<string, any> | null;
   is_active: boolean;
   is_verified: boolean;
   verification_status: SellerVerificationStatus;
