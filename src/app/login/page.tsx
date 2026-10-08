@@ -18,7 +18,14 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect') || '/';
+  const redirectPath =
+    rawRedirect.startsWith('/') &&
+    !rawRedirect.startsWith('//') &&
+    !rawRedirect.includes('://') &&
+    !rawRedirect.includes('\\')
+      ? rawRedirect
+      : '/';
   const { refreshProfile } = useAuth();
   const supabase = createClient();
 

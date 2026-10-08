@@ -118,8 +118,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   // Filter by search query
   if (resolvedParams.q) {
-    const term = resolvedParams.q.trim();
-    query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%,brand.ilike.%${term}%`);
+    const sanitizedTerm = resolvedParams.q.trim().replace(/[,()\\"%]/g, '');
+    if (sanitizedTerm) {
+      query = query.or(`title.ilike.%${sanitizedTerm}%,description.ilike.%${sanitizedTerm}%,brand.ilike.%${sanitizedTerm}%`);
+    }
   }
 
   // Sorting

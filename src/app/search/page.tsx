@@ -54,9 +54,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     `)
     .eq('status', 'active');
 
-  if (queryTerm.trim()) {
-    const term = queryTerm.trim();
-    query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%,brand.ilike.%${term}%,search_tags.cs.{"${term}"}`);
+  const sanitizedTerm = queryTerm.trim().replace(/[,()\\"%]/g, '');
+  if (sanitizedTerm) {
+    query = query.or(`title.ilike.%${sanitizedTerm}%,description.ilike.%${sanitizedTerm}%,brand.ilike.%${sanitizedTerm}%,search_tags.cs.{"${sanitizedTerm}"}`);
   }
 
   if (resolvedParams.type === 'rent') {

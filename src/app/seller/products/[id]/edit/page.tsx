@@ -136,16 +136,46 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
     try {
       const uploaded: string[] = [];
+      const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+      const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const ext = file.name.split('.').pop() || 'jpg';
-        const fileName = `${user.id}/${Date.now()}_${i}.${ext}`;
+
+        // Validate MIME type
+        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+          setErrorMessage(`File "${file.name}" is not a supported format. Please upload JPEG, PNG, or WebP images only (SVGs are not permitted).`);
+          setIsUploading(false);
+          return;
+        }
+
+        // Validate extension
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (!ALLOWED_EXTS.includes(ext)) {
+          setErrorMessage(`Invalid file extension ".${ext}". Allowed extensions: jpg, jpeg, png, webp.`);
+          setIsUploading(false);
+          return;
+        }
+
+        // Validate size
+        if (file.size > MAX_FILE_SIZE) {
+          setErrorMessage(`File "${file.name}" exceeds the 5MB size limit.`);
+          setIsUploading(false);
+          return;
+        }
+
+        const fileName = `${user.id}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
 
         const { data, error } = await supabase.storage
           .from('product-images')
           .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
-        if (!error && data) {
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (data) {
           const { data: publicData } = supabase.storage
             .from('product-images')
             .getPublicUrl(fileName);

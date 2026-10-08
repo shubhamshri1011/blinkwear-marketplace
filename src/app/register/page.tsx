@@ -19,7 +19,14 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect') || '/';
+  const redirectPath =
+    rawRedirect.startsWith('/') &&
+    !rawRedirect.startsWith('//') &&
+    !rawRedirect.includes('://') &&
+    !rawRedirect.includes('\\')
+      ? rawRedirect
+      : '/';
   const { refreshProfile } = useAuth();
   const { selectedCity, availableCities } = useCity();
   const supabase = createClient();

@@ -3,31 +3,61 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const cfSecretKey = process.env.CF_SECRET_KEY;
-
-const supabase = createClient(supabaseUrl, serviceKey);
 
 export async function POST(req: NextRequest) {
   try {
+    if (!serviceKey || !cfSecretKey) {
+      console.error('[Cashfree Webhook] Missing server credentials (CF_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY).');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const rawBody = await req.text();
 
-    // Verify Cashfree webhook signature if secret key & signature headers are present
+    // Verify Cashfree webhook signature (mandatory headers)
     const signature = req.headers.get('x-webhook-signature');
     const timestamp = req.headers.get('x-webhook-timestamp');
 
-    if (cfSecretKey && signature && timestamp) {
-      const expectedSignature = crypto
-        .createHmac('sha256', cfSecretKey)
-        .update(timestamp + rawBody)
-        .digest('base64');
-
-      if (expectedSignature !== signature) {
-        console.error('[Cashfree Webhook] Invalid webhook signature detected.');
-        return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
-      }
+    if (!signature || !timestamp) {
+      console.error('[Cashfree Webhook] Missing signature or timestamp headers.');
+      return NextResponse.json({ error: 'Missing webhook signature headers' }, { status: 401 });
     }
+
+    // Timestamp freshness verification (reject if older than 5 minutes)
+    const tsNum = Number(timestamp);
+    if (!Number.isFinite(tsNum) || tsNum <= 0) {
+      console.error('[Cashfree Webhook] Invalid timestamp format.');
+      return NextResponse.json({ error: 'Invalid webhook timestamp' }, { status: 401 });
+    }
+
+    const now = Date.now();
+    const tsMs = tsNum < 1e11 ? tsNum * 1000 : tsNum;
+    const ageMs = Math.abs(now - tsMs);
+    const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+
+    if (ageMs > MAX_AGE_MS) {
+      console.error(`[Cashfree Webhook] Webhook timestamp expired: age ${Math.round(ageMs / 1000)}s.`);
+      return NextResponse.json({ error: 'Webhook timestamp expired' }, { status: 401 });
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', cfSecretKey)
+      .update(timestamp + rawBody)
+      .digest('base64');
+
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf-8');
+    const signatureBuffer = Buffer.from(signature, 'utf-8');
+
+    if (
+      expectedBuffer.length !== signatureBuffer.length ||
+      !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)
+    ) {
+      console.error('[Cashfree Webhook] Invalid webhook signature detected.');
+      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     let payload: any;
     try {

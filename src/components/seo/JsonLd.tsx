@@ -5,10 +5,13 @@ interface JsonLdProps {
 }
 
 export function JsonLd({ data }: JsonLdProps) {
+  // Safe serialization: escape `<` to prevent `<script>` breakout XSS in JSON-LD
+  const safeJson = JSON.stringify(data).replace(/</g, '\\u003c');
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeJson }}
     />
   );
 }
