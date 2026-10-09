@@ -33,7 +33,7 @@ export default function ContactPage() {
           <div className="bg-neutral-50 p-6 rounded-3xl border border-neutral-200 space-y-2">
             <Phone className="w-5 h-5 text-emerald-600" />
             <h4 className="font-bold text-neutral-900 text-sm">Direct Phone & WhatsApp</h4>
-            <p className="text-xs text-neutral-600">+91 98765 43210</p>
+            <p className="text-xs text-neutral-600">+91 77229 58818</p>
             <p className="text-[11px] text-neutral-400">Mon - Sat: 10:00 AM to 8:00 PM IST</p>
           </div>
 
@@ -41,8 +41,7 @@ export default function ContactPage() {
             <MapPin className="w-5 h-5 text-emerald-600" />
             <h4 className="font-bold text-neutral-900 text-sm">Regional Operation Hubs</h4>
             <p className="text-xs text-neutral-600">
-              • Bhopal Hub: MP Nagar Zone II, Bhopal, Madhya Pradesh<br />
-              • Pune Hub: Koregaon Park / Baner, Pune, Maharashtra
+              • Main Hub: Naveen Villa Sindhi Colony Bypass Road, Bina - 470113, Madhya Pradesh<br />
             </p>
           </div>
         </div>

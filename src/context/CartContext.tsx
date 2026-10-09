@@ -3,10 +3,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthContext';
-import type { CartItemWithProduct, PurchaseType } from '@/types/database';
+import type { CartItemWithProduct, PurchaseType, Product, ProductWithImages } from '@/types/database';
 
 interface AddToCartParams {
   productId: string;
+  product?: Product | ProductWithImages;
   purchaseType: PurchaseType;
   quantity?: number;
   selectedSize?: string | null;
@@ -102,14 +103,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Check if product exists and is active
-      const { data: product, error: prodErr } = await supabase
-        .from('products')
-        .select('id, title, status, listing_type, stock_quantity')
-        .eq('id', params.productId)
-        .single();
+      let product: { id: string; title: string; status: string; listing_type: string; stock_quantity: number | null } | null = null;
 
-      if (prodErr || !product || product.status !== 'active') {
+      if (params.product) {
+        product = {
+          id: params.product.id,
+          title: params.product.title,
+          status: params.product.status,
+          listing_type: params.product.listing_type,
+          stock_quantity: params.product.stock_quantity ?? null,
+        };
+      } else {
+        // Fallback: Check if product exists and is active from database
+        const { data, error: prodErr } = await supabase
+          .from('products')
+          .select('id, title, status, listing_type, stock_quantity')
+          .eq('id', params.productId)
+          .single();
+
+        if (prodErr || !data) {
+          console.error('[CartContext] Failed to fetch product:', prodErr);
+          return { success: false, error: 'Product is unavailable' };
+        }
+        product = data;
+      }
+
+      if (!product || product.status !== 'active') {
         return { success: false, error: 'Product is unavailable' };
       }
 

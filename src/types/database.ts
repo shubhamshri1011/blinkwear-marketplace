@@ -316,6 +316,16 @@ export type SellerStorefront = {
   verified_at: string | null;
 };
 
+export type SellerPublicProfile = {
+  id: string;
+  store_name: string;
+  store_description: string | null;
+  city: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  is_verified: boolean;
+};
+
 export type Address = {
   id: string;
   user_id: string;
@@ -640,7 +650,20 @@ export type Database = {
         ];
       };
     };
-    Views: {};
+    Views: {
+      seller_public_profiles: {
+        Row: {
+          id: string;
+          store_name: string;
+          store_description: string | null;
+          city: string | null;
+          logo_url: string | null;
+          banner_url: string | null;
+          is_verified: boolean;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       increment_product_views: {
         Args: { p_product_id: string };

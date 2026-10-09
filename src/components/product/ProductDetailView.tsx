@@ -225,6 +225,7 @@ export function ProductDetailView({
 
     const res = await addToCart({
       productId: product.id,
+      product,
       purchaseType: activeMode,
       quantity: 1,
       selectedSize,
