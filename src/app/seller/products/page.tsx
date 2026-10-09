@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import type { ProductWithImages } from '@/types/database';
-import { Plus, Edit, Package, Eye, ArrowLeft, Trash2 } from 'lucide-react';
+import { Plus, Edit, Package, Eye, ArrowLeft } from 'lucide-react';
 
 export default function SellerProductsPage() {
   const { user } = useAuth();
@@ -26,7 +26,7 @@ export default function SellerProductsPage() {
           size, color, condition, listing_type, sale_price, discount_price,
           rent_price_per_day, security_deposit, delivery_charge, city, status,
           view_count, stock_quantity, min_rental_days, max_rental_days, search_tags,
-          video_url, featured, featured_sort_order, locked_until, created_at, updated_at,
+          video_url, featured, featured_sort_order, locked_until, rejection_reason, created_at, updated_at,
           product_images (id, image_url, sort_order)
         `)
         .eq('seller_id', user.id)
@@ -45,20 +45,6 @@ export default function SellerProductsPage() {
   useEffect(() => {
     fetchSellerProducts();
   }, [user]);
-
-  const handleToggleStatus = async (productId: string, currentStatus: string) => {
-    // Only allow toggling between active and inactive — moderation statuses are admin-only
-    if (!['active', 'inactive'].includes(currentStatus)) return;
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    try {
-      await supabase.from('products').update({ status: newStatus }).eq('id', productId);
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, status: newStatus as any } : p))
-      );
-    } catch (err) {
-      console.error('Error toggling product status:', err);
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
@@ -137,7 +123,13 @@ export default function SellerProductsPage() {
                             : 'bg-neutral-100 text-neutral-600'
                         }`}
                       >
-                        {product.status === 'pending_approval' ? 'Pending Review' : product.status}
+                        {product.status === 'pending_approval'
+                          ? 'Pending'
+                          : product.status === 'active'
+                          ? 'Active'
+                          : product.status === 'rejected'
+                          ? 'Rejected'
+                          : product.status.replace('_', ' ')}
                       </span>
                       <span className="text-[10px] text-neutral-400 uppercase font-semibold">
                         Type: {product.listing_type}
@@ -178,26 +170,15 @@ export default function SellerProductsPage() {
                     <Edit className="w-4 h-4" />
                   </Link>
 
-                  <Link
-                    href={`/products/${product.id}`}
-                    target="_blank"
-                    className="p-2 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
-                    aria-label="View public page"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Link>
-
-                  {['active', 'inactive'].includes(product.status) ? (
-                    <button
-                      onClick={() => handleToggleStatus(product.id, product.status)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-full border border-neutral-300 hover:bg-neutral-50 transition-colors"
+                  {product.status === 'active' && (
+                    <Link
+                      href={`/products/${product.id}`}
+                      target="_blank"
+                      className="p-2 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
+                      aria-label="View public page"
                     >
-                      {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-semibold text-neutral-400 px-3 py-1.5">
-                      {product.status === 'pending_approval' ? 'Under Review' : product.status === 'rejected' ? 'Rejected' : product.status}
-                    </span>
+                      <Eye className="w-4 h-4" />
+                    </Link>
                   )}
                 </div>
               </div>

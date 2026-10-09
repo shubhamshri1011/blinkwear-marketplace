@@ -83,7 +83,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         console.error('Error fetching wishlist:', error);
       } else if (data) {
         const validItems = (data as unknown as WishlistItemWithProduct[]).filter(
-          (item) => item && item.product && item.product.id
+          (item) => item && item.product?.id && item.product.status === 'active'
         );
         setWishlistItems(validItems);
       }

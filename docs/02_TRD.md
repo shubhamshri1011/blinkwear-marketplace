@@ -1,0 +1,85 @@
+# BlinkWear Technical Requirements
+
+## Stack
+
+| Application | Stack from manifests/config | Sources |
+|---|---|---|
+| Marketplace web | Next.js 16.3.8 App Router, React 19.2.8, TypeScript 5, Tailwind CSS 4, Supabase SSR/JS, Cashfree JS SDK. | [package.json](../package.json), [Next config](../next.config.ts) |
+| Admin panel | Next.js 14.2.35 App Router, React 18.3.1, TypeScript 5.4, Tailwind CSS 3.4, Supabase JS. | [package.json](../../admin-panel/admin-panel/package.json), [Tailwind config](../../admin-panel/admin-panel/tailwind.config.ts) |
+| Mobile | Expo 57, React Native 0.86.3, React 19.2, TypeScript 6, React Navigation 7, Supabase JS, AsyncStorage, native Cashfree PG SDK. | [package.json](../../mobile-app/mobile-app/package.json), [app.json](../../mobile-app/mobile-app/app.json), [EAS config](../../mobile-app/mobile-app/eas.json) |
+| Backend | Supabase Postgres/RLS, SQL migrations stored under the mobile repo’s `supabase/`, four Supabase Edge Functions, plus the web Next.js Cashfree webhook route. | [SQL source directory](../../mobile-app/mobile-app/supabase/schema.sql), [Edge Functions](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [webhook route](../src/app/api/webhooks/cashfree/route.ts) |
+
+## Architecture
+
+| Layer | Implementation | Sources |
+|---|---|---|
+| Marketplace rendering | Next App Router server pages use an SSR Supabase client; a guest without an auth cookie uses the catalog client. Browser/client contexts use the anon key. | [server client](../src/lib/supabase/server.ts), [catalog client](../src/lib/supabase/catalog.ts), [browser client](../src/lib/supabase/client.ts), [proxy](../src/proxy.ts) |
+| Admin | Separate Next app; Supabase JS client uses the public anon key and authenticated admin session. Dashboard layout redirects unauthenticated/non-admin users to login; database RLS remains the write boundary. | [admin Supabase client](../../admin-panel/admin-panel/lib/supabase.ts), [auth providers](../../admin-panel/admin-panel/app/providers.tsx), [dashboard layout](../../admin-panel/admin-panel/app/%28dashboard%29/layout.tsx), [admin RLS](../../mobile-app/mobile-app/supabase/phase3_admin_catalog.sql) |
+| Mobile | Expo app uses Supabase JS with anon key and AsyncStorage session persistence; `RootNavigator` composes auth, cart, wishlist, seller, and verified-seller providers and navigation stacks. Guest catalog browsing is supported; account actions require login. | [Supabase client](../../mobile-app/mobile-app/src/lib/supabase.ts), [root navigator](../../mobile-app/mobile-app/src/navigation/RootNavigator.tsx), [tabs](../../mobile-app/mobile-app/src/navigation/MainTabNavigator.tsx) |
+| Database access | Postgres RLS and database triggers constrain client table access; privileged order creation runs through service-role Edge Functions and restricted SQL RPCs. | [backend schema](06_BACKEND_SCHEMA.md), [buy verification function](../../mobile-app/mobile-app/supabase/functions/verify-cashfree-payment/index.ts), [RPC grants](../../mobile-app/mobile-app/supabase/phase29_cart_uniqueness_and_database_audit.sql) |
+
+## Environment Matrix
+
+| Variable | Consumer | Exposure / purpose | Source |
+|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Marketplace web, admin | Public project URL used by clients. | [web client](../src/lib/supabase/client.ts), [admin client](../../admin-panel/admin-panel/lib/supabase.ts), [web env example](../.env.example), [admin env example](../../admin-panel/admin-panel/.env.example) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Marketplace web, admin | Public anon key; SQL RLS controls data access. | [web client](../src/lib/supabase/client.ts), [admin client](../../admin-panel/admin-panel/lib/supabase.ts), [mobile client note](../../mobile-app/mobile-app/src/lib/supabase.ts) |
+| `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Mobile bundle | Public Supabase URL/anon key; required by mobile client. | [mobile client](../../mobile-app/mobile-app/src/lib/supabase.ts) |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Supabase Edge Functions | Function URL and anon client for verifying caller JWT. | [create order](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [verify payment](../../mobile-app/mobile-app/supabase/functions/verify-cashfree-payment/index.ts) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Edge Functions, web webhook | Privileged database writes; server-only and must not be exposed through `NEXT_PUBLIC_`. | [create order](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [webhook](../src/app/api/webhooks/cashfree/route.ts), [env example](../.env.example) |
+| `CF_APP_ID`, `CF_SECRET_KEY` | Supabase Edge Functions; webhook reads `CF_SECRET_KEY` | Cashfree API credentials; server-side secrets. | [create order](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [webhook](../src/app/api/webhooks/cashfree/route.ts), [env example](../.env.example) |
+| `CASHFREE_ENV` | Supabase Edge Functions | Selects sandbox/production API URL; create functions return server-selected `cf_env` to clients. | [create order](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [rental order](../../mobile-app/mobile-app/supabase/functions/create-cashfree-rental-order/index.ts) |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Marketplace metadata | Optional Google site verification string. | [root layout](../src/app/layout.tsx) |
+| `NEXT_PUBLIC_SITE_URL` | Env example only in reviewed source | Present in `.env.example`; no runtime read was found in the reviewed application source. | [env example](../.env.example) |
+| `NEXT_PUBLIC_CASHFREE_ENV` | Admin env example only | Present in admin `.env.example`; no runtime read was found in admin source. Cashfree browser mode in marketplace is selected from Edge Function `cf_env`. | [admin env example](../../admin-panel/admin-panel/.env.example), [checkout](../src/app/checkout/page.tsx) |
+
+The mobile Supabase client error message refers developers to `.env.example`, but no mobile `.env.example` file is present in the checked-in project root; the only sample vars documented here come from code. **OPEN QUESTION:** add/identify the intended mobile env template. Sources: [mobile client](../../mobile-app/mobile-app/src/lib/supabase.ts), [mobile package](../../mobile-app/mobile-app/package.json).
+
+## Cashfree And Webhooks
+
+| Flow | Current behavior | Sources |
+|---|---|---|
+| Buy checkout | Web checkout invokes `create-cashfree-order`, opens the Cashfree JS modal using returned `cf_env`, then invokes `verify-cashfree-payment`. | [web checkout](../src/app/checkout/page.tsx), [buy Edge Function](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [verify function](../../mobile-app/mobile-app/supabase/functions/verify-cashfree-payment/index.ts) |
+| Rental checkout | Web checkout sends one or more dated cart items to `create-cashfree-rental-order`, opens Cashfree using returned `cf_env`, then invokes `verify-cashfree-rental-payment`. | [web checkout](../src/app/checkout/page.tsx), [rental Edge Function](../../mobile-app/mobile-app/supabase/functions/create-cashfree-rental-order/index.ts), [verify function](../../mobile-app/mobile-app/supabase/functions/verify-cashfree-rental-payment/index.ts) |
+| Payment verification | Verify functions authenticate the caller, check payment status/amount with Cashfree, record the provider payment ID, and call the service-role-only finalization RPC. | [buy verify](../../mobile-app/mobile-app/supabase/functions/verify-cashfree-payment/index.ts), [rental verify](../../mobile-app/mobile-app/supabase/functions/verify-cashfree-rental-payment/index.ts), [RPC grants](../../mobile-app/mobile-app/supabase/phase29_cart_uniqueness_and_database_audit.sql), [rental RPC](../../mobile-app/mobile-app/supabase/phase28_fix_create_paid_rental_booking_rpc.sql) |
+| Webhook | Implemented at `/api/webhooks/cashfree`. Verifies HMAC-SHA256 signature with timing-safe comparison and a five-minute timestamp window; checks amount/currency; handles payment success/failure and refund status; uses a conditional payment-attempt update for idempotency before calling finalization RPCs. | [webhook route](../src/app/api/webhooks/cashfree/route.ts) |
+
+The deployment guide documents webhook path `/api/cashfree/webhook` and env names `CASHFREE_APP_ID`/`CASHFREE_SECRET_KEY`, while the checked-in route is `/api/webhooks/cashfree` and code reads `CF_SECRET_KEY`; Edge Functions read `CF_APP_ID`, `CF_SECRET_KEY`, and `CASHFREE_ENV`. The web env example also omits a `CASHFREE_ENV` assignment. Treat deployment values as unresolved until confirmed. Sources: [deployment guide](../../blinkwear_deployment_guide.md), [webhook route](../src/app/api/webhooks/cashfree/route.ts), [Edge Function env reads](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [env example](../.env.example).
+
+## Security
+
+| Control | Source behavior | Sources |
+|---|---|---|
+| Client credentials | Browser/admin/mobile clients use Supabase anon keys; mobile source explicitly warns against bundling service role. | [web browser client](../src/lib/supabase/client.ts), [admin client](../../admin-panel/admin-panel/lib/supabase.ts), [mobile client](../../mobile-app/mobile-app/src/lib/supabase.ts) |
+| Session handling | Marketplace proxy refreshes Supabase session except for `/api/webhooks/*`; server client uses request cookies. | [proxy](../src/proxy.ts), [session middleware](../src/lib/supabase/middleware.ts), [server client](../src/lib/supabase/server.ts) |
+| Database authorization | Table RLS, column grants, moderation/status/lifecycle triggers, and service-role-only order RPC grants are defined by SQL; see backend schema reference. | [backend schema](06_BACKEND_SCHEMA.md), [phase30 grants](../../mobile-app/mobile-app/supabase/phase30_security_audit_hardening.sql), [payment RPC grants](../../mobile-app/mobile-app/supabase/phase29_cart_uniqueness_and_database_audit.sql) |
+| Web security headers | Next config sets CSP in Report-Only mode, X-Frame-Options, nosniff, Referrer-Policy, HSTS, and Permissions-Policy. | [Next config](../next.config.ts) |
+| Webhook verification | Requires signature/timestamp; enforces freshness and constant-time HMAC comparison before database work. | [Cashfree webhook](../src/app/api/webhooks/cashfree/route.ts) |
+
+## Deployment And Known Limits
+
+| Area | Source-supported state | Sources |
+|---|---|---|
+| Marketplace/admin web | Deployment guide describes separate Vercel production projects and custom domains; package scripts expose `next build` and `next start`. | [deployment guide](../../blinkwear_deployment_guide.md), [marketplace package](../package.json), [admin package](../../admin-panel/admin-panel/package.json) |
+| Mobile release | `eas.json` defines development, preview, and production profiles; `app.json` declares app identifiers/plugins. | [EAS config](../../mobile-app/mobile-app/eas.json), [Expo config](../../mobile-app/mobile-app/app.json) |
+| Supabase deployment | SQL is stored as `schema.sql` and `phase*.sql` files in the mobile repo; review-only phase30/32/33/34 comments exist. The source does not establish which are applied to a given project. | [Supabase schema](../../mobile-app/mobile-app/supabase/schema.sql), [phase30](../../mobile-app/mobile-app/supabase/phase30_security_audit_hardening.sql), [phase32](../../mobile-app/mobile-app/supabase/phase32_kyc_docs_column_and_refunds.sql), [phase33](../../mobile-app/mobile-app/supabase/phase33_protect_rental_lifecycle_and_triggers.sql), [phase34](../../mobile-app/mobile-app/supabase/phase34_product_reapproval.sql) |
+| Test/build scripts | Web/admin manifests define build scripts but no test script; mobile manifest defines Expo start/platform scripts and no test script. | [marketplace package](../package.json), [admin package](../../admin-panel/admin-panel/package.json), [mobile package](../../mobile-app/mobile-app/package.json) |
+
+Known source limitations and configuration questions:
+
+- The webhook marks a payment attempt `paid` before calling the order/rental RPC. If the RPC errors, it returns 500; a later webhook sees `paid` and exits as already reconciled. Recovery behavior is not shown. Source: [webhook route](../src/app/api/webhooks/cashfree/route.ts).
+- The buy pricing paths disagree on pickup/return charges: mobile UI calculation includes it; web UI and create-buy Edge Function omit it from the charged amount; the final `create_paid_order()` recomputes a total including metadata pickup/return. Confirm intended behavior. Sources: [mobile pricing](../../mobile-app/mobile-app/src/utils/pricing.ts), [web pricing](../src/lib/pricing.ts), [buy Edge Function](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [order RPC](../../mobile-app/mobile-app/supabase/phase29_cart_uniqueness_and_database_audit.sql).
+- The deployment guide contains a literal anon key and obsolete Cashfree variable/path names. This doc intentionally does not reproduce credential values. Confirm/refresh the guide before using it. Source: [deployment guide](../../blinkwear_deployment_guide.md).
+- The mobile README describes Expo SDK 54, says checkout is absent, and says EAS is not configured; the current package/app files are Expo 57, include checkout screens, and include `eas.json`. The admin README says `/users` is unbuilt/404, while that route exists in the app tree. Treat code/config as the implementation record; confirm whether to update these READMEs. Sources: [mobile README](../../mobile-app/mobile-app/README.md), [mobile package](../../mobile-app/mobile-app/package.json), [mobile checkout screen](../../mobile-app/mobile-app/src/screens/Cart/CheckoutScreen.tsx), [EAS config](../../mobile-app/mobile-app/eas.json), [admin README](../../admin-panel/admin-panel/README.md), [admin users route](../../admin-panel/admin-panel/app/%28dashboard%29/users/page.tsx).
+- Phase30/32/34 and other review-only SQL may not match production. Compare with the read-only queries in [backend verification SQL](../docs/_verify.sql). Sources: [phase30](../../mobile-app/mobile-app/supabase/phase30_security_audit_hardening.sql), [phase32](../../mobile-app/mobile-app/supabase/phase32_kyc_docs_column_and_refunds.sql), [phase34](../../mobile-app/mobile-app/supabase/phase34_product_reapproval.sql).
+
+## OPEN QUESTIONS
+
+1. Which deployment guide values and webhook URL are canonical for production: the written guide or current code? Sources: [deployment guide](../../blinkwear_deployment_guide.md), [webhook route](../src/app/api/webhooks/cashfree/route.ts), [Edge Function env](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts).
+2. What is the recovery/reconciliation process when a Cashfree webhook records `paid` but a finalization RPC fails? Source: [webhook route](../src/app/api/webhooks/cashfree/route.ts).
+3. Should buy checkout charge pickup/return, and which client/server calculation is authoritative? Sources: [web pricing](../src/lib/pricing.ts), [mobile pricing](../../mobile-app/mobile-app/src/utils/pricing.ts), [buy Edge Function](../../mobile-app/mobile-app/supabase/functions/create-cashfree-order/index.ts), [order RPC](../../mobile-app/mobile-app/supabase/phase29_cart_uniqueness_and_database_audit.sql).
+4. Which SQL review migrations have been applied to the target Supabase project? Sources: [phase30](../../mobile-app/mobile-app/supabase/phase30_security_audit_hardening.sql), [phase32](../../mobile-app/mobile-app/supabase/phase32_kyc_docs_column_and_refunds.sql), [phase34](../../mobile-app/mobile-app/supabase/phase34_product_reapproval.sql).
+5. Should the admin’s `NEXT_PUBLIC_CASHFREE_ENV` sample variable be removed or wired to a documented feature? Source: [admin env example](../../admin-panel/admin-panel/.env.example).
+6. Should the mobile project add the `.env.example` referenced by its Supabase client error message? Source: [mobile Supabase client](../../mobile-app/mobile-app/src/lib/supabase.ts).
+7. What is the approved refund operation and should phase33’s automatic database status update remain distinct from manual Cashfree refund initiation? Sources: [refund policy page](../src/app/refund-policy/page.tsx), [phase33 lifecycle trigger](../../mobile-app/mobile-app/supabase/phase33_protect_rental_lifecycle_and_triggers.sql), [Cashfree webhook](../src/app/api/webhooks/cashfree/route.ts).
+8. Should the stale mobile/admin README claims be updated to match current package versions, checkout screens, EAS config, and existing routes? Sources: [mobile README](../../mobile-app/mobile-app/README.md), [mobile package](../../mobile-app/mobile-app/package.json), [EAS config](../../mobile-app/mobile-app/eas.json), [admin README](../../admin-panel/admin-panel/README.md), [admin users route](../../admin-panel/admin-panel/app/%28dashboard%29/users/page.tsx).

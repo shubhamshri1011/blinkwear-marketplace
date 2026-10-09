@@ -50,6 +50,10 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const [color, setColor] = useState('Red / Maroon');
   const [condition, setCondition] = useState<ProductCondition>('like_new');
   const [city, setCity] = useState(selectedCity);
+  const [initialContentSnapshot, setInitialContentSnapshot] = useState<string | null>(null);
+  const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
+  const [initialTagInputs, setInitialTagInputs] = useState<string | null>(null);
+  const [didSendForApproval, setDidSendForApproval] = useState(false);
 
   // Images state
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -100,14 +104,14 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         setBrand(p.brand || '');
         setCategoryId(p.category_id || '');
         setListingType(p.listing_type || 'rent');
-        setRentPricePerDay(p.rent_price_per_day ? String(p.rent_price_per_day) : '');
-        setSecurityDeposit(p.security_deposit ? String(p.security_deposit) : '');
-        setMinRentalDays(p.min_rental_days ? String(p.min_rental_days) : '3');
-        setMaxRentalDays(p.max_rental_days ? String(p.max_rental_days) : '10');
-        setSalePrice(p.sale_price ? String(p.sale_price) : '');
-        setDiscountPrice(p.discount_price ? String(p.discount_price) : '');
-        setStockQuantity(p.stock_quantity ? String(p.stock_quantity) : '1');
-        setSize(p.size || 'M');
+        setRentPricePerDay(p.rent_price_per_day != null ? String(p.rent_price_per_day) : '');
+        setSecurityDeposit(p.security_deposit != null ? String(p.security_deposit) : '');
+        setMinRentalDays(p.min_rental_days != null ? String(p.min_rental_days) : '');
+        setMaxRentalDays(p.max_rental_days != null ? String(p.max_rental_days) : '');
+        setSalePrice(p.sale_price != null ? String(p.sale_price) : '');
+        setDiscountPrice(p.discount_price != null ? String(p.discount_price) : '');
+        setStockQuantity(p.stock_quantity != null ? String(p.stock_quantity) : '1');
+        setSize(p.size ?? '');
         setColor(p.color || '');
         setCondition(p.condition || 'like_new');
         setCity(p.city || selectedCity);
@@ -116,6 +120,26 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           ? [...p.product_images].sort((a, b) => a.sort_order - b.sort_order).map((img) => img.image_url)
           : [];
         setImageUrls(imgs);
+        setInitialImageUrls(imgs);
+        setInitialTagInputs(JSON.stringify([p.brand ?? '', p.color ?? '', p.size ?? '', p.city ?? ''].map((value) => value.trim())));
+        setInitialContentSnapshot(JSON.stringify({
+          title: p.title?.trim() ?? '',
+          description: p.description?.trim() || null,
+          brand: p.brand?.trim() || null,
+          categoryId: p.category_id || null,
+          listingType: p.listing_type,
+          rentPricePerDay: p.rent_price_per_day,
+          securityDeposit: p.security_deposit,
+          minRentalDays: p.min_rental_days,
+          maxRentalDays: p.max_rental_days,
+          salePrice: p.sale_price,
+          discountPrice: p.discount_price,
+          size: p.size?.trim() || null,
+          color: p.color?.trim() || null,
+          condition: p.condition,
+          city: p.city,
+          imageUrls: imgs,
+        }));
 
         if (cats) {
           setCategories(cats as Category[]);
@@ -209,6 +233,29 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     setImageUrls((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  const currentTagInputs = JSON.stringify([brand, color, size, city].map((value) => value.trim()));
+  const currentContentSnapshot = JSON.stringify({
+    title: title.trim(),
+    description: description.trim() || null,
+    brand: brand.trim() || null,
+    categoryId: categoryId || null,
+    listingType,
+    rentPricePerDay: rentPricePerDay.trim() ? Number(rentPricePerDay) : null,
+    securityDeposit: securityDeposit.trim() ? Number(securityDeposit) : null,
+    minRentalDays: minRentalDays.trim() ? Number(minRentalDays) : null,
+    maxRentalDays: maxRentalDays.trim() ? Number(maxRentalDays) : null,
+    salePrice: salePrice.trim() ? Number(salePrice) : null,
+    discountPrice: discountPrice.trim() ? Number(discountPrice) : null,
+    size: size.trim() || null,
+    color: color.trim() || null,
+    condition,
+    city,
+    imageUrls,
+  });
+  const hasContentChanges = initialContentSnapshot !== null && currentContentSnapshot !== initialContentSnapshot;
+  const imagesChanged = JSON.stringify(imageUrls) !== JSON.stringify(initialImageUrls);
+  const tagInputsChanged = initialTagInputs !== null && currentTagInputs !== initialTagInputs;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -223,30 +270,29 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     }
 
     try {
-      // 1. Update product row and reset status to 'pending_approval' for re-moderation
+      setDidSendForApproval(hasContentChanges);
+
+      // 1. Update listing fields; the database controls moderation status.
       const { error: prodErr } = await supabase
         .from('products')
         .update({
           category_id: categoryId || null,
           title: title.trim(),
           description: description.trim() || null,
-          brand: brand.trim() || 'Designer Atelier',
-          size: size.trim(),
-          color: color.trim(),
+          brand: brand.trim() || null,
+          size: size.trim() || null,
+          color: color.trim() || null,
           condition,
           listing_type: listingType,
-          rent_price_per_day: rentPricePerDay ? Number(rentPricePerDay) : null,
-          security_deposit: securityDeposit ? Number(securityDeposit) : null,
-          min_rental_days: Number(minRentalDays) || 3,
-          max_rental_days: Number(maxRentalDays) || 10,
-          sale_price: salePrice ? Number(salePrice) : null,
-          discount_price: discountPrice ? Number(discountPrice) : null,
+          rent_price_per_day: rentPricePerDay.trim() ? Number(rentPricePerDay) : null,
+          security_deposit: securityDeposit.trim() ? Number(securityDeposit) : null,
+          min_rental_days: minRentalDays.trim() ? Number(minRentalDays) : null,
+          max_rental_days: maxRentalDays.trim() ? Number(maxRentalDays) : null,
+          sale_price: salePrice.trim() ? Number(salePrice) : null,
+          discount_price: discountPrice.trim() ? Number(discountPrice) : null,
           stock_quantity: Number(stockQuantity) || 1,
           city,
-          // CRITICAL: Any edit sends the product back for admin approval
-          status: 'pending_approval',
-          rejection_reason: null,
-          search_tags: [brand, color, size, city].filter(Boolean),
+          ...(tagInputsChanged ? { search_tags: [brand, color, size, city].map((value) => value.trim()).filter(Boolean) } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -254,16 +300,22 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
       if (prodErr) throw prodErr;
 
-      // 2. Re-sync images
-      await supabase.from('product_images').delete().eq('product_id', id);
+      // 2. Re-sync images only when their content or order changed.
+      if (imagesChanged) {
+        const { error: deleteError } = await supabase.from('product_images').delete().eq('product_id', id);
+        if (deleteError) throw deleteError;
 
-      const imageRecords = imageUrls.map((url, idx) => ({
-        product_id: id,
-        image_url: url,
-        sort_order: idx,
-      }));
+        const imageRecords = imageUrls.map((url, idx) => ({
+          product_id: id,
+          image_url: url,
+          sort_order: idx,
+        }));
 
-      await supabase.from('product_images').insert(imageRecords);
+        if (imageRecords.length > 0) {
+          const { error: insertError } = await supabase.from('product_images').insert(imageRecords);
+          if (insertError) throw insertError;
+        }
+      }
 
       setIsSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -298,7 +350,9 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         </h1>
 
         <p className="text-neutral-600 text-sm leading-relaxed max-w-lg mx-auto">
-          Your changes have been saved. Per BlinkWear quality & authenticity guidelines, modified listings enter <span className="font-semibold text-neutral-900">Pending Review</span> before becoming live for buyers again.
+          {didSendForApproval
+            ? <>Your changes have been saved. The listing is <span className="font-semibold text-neutral-900">Pending Review</span> and hidden from buyers until approved.</>
+            : 'Your stock update has been saved. The listing status is unchanged.'}
         </p>
 
         <div className="pt-6 flex flex-wrap items-center justify-center gap-4">
@@ -331,7 +385,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       <div className="pb-6 border-b border-neutral-100">
         <h1 className="font-serif text-3xl font-bold text-neutral-900">Edit Outfit Listing</h1>
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-          Update prices, rental terms, and photos. Saving changes will submit the item for admin review.
+          Update listing details, images, and stock.
         </p>
       </div>
 
@@ -342,16 +396,12 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         </div>
       )}
 
-      {/* Moderation notice */}
-      <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-        <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-semibold">Quality & Re-Moderation Notice</p>
-          <p className="text-amber-800 mt-0.5 leading-relaxed">
-            Editing any pricing or outfit details will temporarily switch the status to <strong>Pending Review</strong> while BlinkWear admins inspect the update.
-          </p>
+      {hasContentChanges && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
+          <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">Changes will send this listing for re-approval and hide it until approved.</p>
         </div>
-      </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Basic Details */}

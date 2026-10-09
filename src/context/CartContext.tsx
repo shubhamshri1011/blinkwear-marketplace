@@ -84,7 +84,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error fetching cart:', error);
       } else if (data) {
-        setCartItems(data as unknown as CartItemWithProduct[]);
+        const availableItems = (data as unknown as CartItemWithProduct[]).map((item) => ({
+          ...item,
+          product: item.product?.status === 'active' ? item.product : null,
+        }));
+        setCartItems(availableItems);
       }
     } catch (err) {
       console.error('Error fetching cart:', err);

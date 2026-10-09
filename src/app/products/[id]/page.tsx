@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     .from('products')
     .select('title, description, brand, rent_price_per_day, sale_price, city, listing_type, search_tags, product_images (*)')
     .eq('id', id)
+    .eq('status', 'active')
     .single();
 
   if (!product) {
@@ -95,6 +96,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       category:categories!products_category_id_fkey (id, name, slug)
     `)
     .eq('id', id)
+    .eq('status', 'active')
     .single();
 
   if (error || !productData) {

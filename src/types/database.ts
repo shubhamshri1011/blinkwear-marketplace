@@ -117,7 +117,7 @@ export type CartItem = {
 };
 
 export type CartItemWithProduct = CartItem & {
-  product: ProductWithImages;
+  product: ProductWithImages | null;
 };
 
 export type BuyOrderItemStatus =

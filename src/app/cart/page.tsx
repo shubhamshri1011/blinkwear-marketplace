@@ -44,6 +44,8 @@ export default function CartPage() {
 
   const rentalItems = cartItems.filter((i) => i.purchase_type === 'rent');
   const buyItems = cartItems.filter((i) => i.purchase_type === 'buy');
+  const hasUnavailableRental = rentalItems.some((item) => !item.product);
+  const hasUnavailableBuy = buyItems.some((item) => !item.product);
 
   if (cartItems.length === 0 && !isLoading) {
     return (
@@ -90,11 +92,13 @@ export default function CartPage() {
 
               <button
                 onClick={() => router.push('/checkout?type=rental')}
-                className="py-2.5 px-6 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto"
+                disabled={hasUnavailableRental}
+                className="py-2.5 px-6 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Checkout All Rentals ({rentalItems.length}) <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
+            {hasUnavailableRental && <p className="text-xs text-rose-700">Remove unavailable items before checking out.</p>}
 
             <div className="space-y-4">
               {rentalItems.map((item) => {
@@ -185,7 +189,8 @@ export default function CartPage() {
 
                       <button
                         onClick={() => router.push(`/checkout?cart_item_id=${item.id}&type=rental`)}
-                        className="py-2.5 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1 flex-1 md:flex-none md:w-full"
+                        disabled={!product}
+                        className="py-2.5 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1 flex-1 md:flex-none md:w-full disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Checkout Rental <ArrowRight className="w-3.5 h-3.5" />
                       </button>
@@ -207,11 +212,13 @@ export default function CartPage() {
 
               <button
                 onClick={() => router.push('/checkout?type=buy')}
-                className="py-2.5 px-6 rounded-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto"
+                disabled={hasUnavailableBuy}
+                className="py-2.5 px-6 rounded-full bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5 self-start sm:self-auto disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Checkout All Purchases <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
+            {hasUnavailableBuy && <p className="text-xs text-rose-700">Remove unavailable items before checking out.</p>}
 
             <div className="space-y-4">
               {buyItems.map((item) => {
