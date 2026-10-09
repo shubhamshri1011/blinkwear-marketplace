@@ -1,4 +1,19 @@
 import React from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms & Conditions — BlinkWear.in',
+  description:
+    'Read the BlinkWear platform terms and conditions governing the use of our fashion rental and resale marketplace.',
+  alternates: {
+    canonical: 'https://blinkwear.in/terms-and-conditions',
+  },
+  openGraph: {
+    title: 'Terms & Conditions | BlinkWear.in',
+    description: 'BlinkWear.in User Agreement and Platform Terms.',
+    url: 'https://blinkwear.in/terms-and-conditions',
+  },
+};
 
 export default function TermsAndConditionsPage() {
   return (

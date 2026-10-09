@@ -39,26 +39,47 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     };
   }
 
-  const title = `${category.name} Rental & Designer Wear`;
-  const description = `Rent authentic designer ${category.name.toLowerCase()} in Bhopal, Pune, and across India on BlinkWear.in. 100% sanitized, doorstep delivery & reverse pickup.`;
+  const isLehenga = slug === 'lehengas' || slug === 'lehenga';
+  const title = isLehenga
+    ? 'Rental Lehenga Bhopal | Rent Designer Bridal & Party Lehengas — BlinkWear'
+    : `Rent ${category.name} in Bhopal | Designer ${category.name} on Rent — BlinkWear`;
+
+  const description = isLehenga
+    ? 'Rent authentic designer bridal lehengas, party wear and Navratri cholis in Bhopal on BlinkWear.in. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.'
+    : `Rent authentic designer ${category.name.toLowerCase()} in Bhopal, Pune, and across India on BlinkWear.in. 100% sanitized, doorstep delivery & reverse pickup.`;
+
+  const keywords = [
+    `rental ${category.name.toLowerCase()}`,
+    `${category.name.toLowerCase()} on rent`,
+    `${category.name.toLowerCase()} rental Bhopal`,
+    'rental lehenga Bhopal',
+    'lehenga on rent',
+    'BlinkWear',
+    'Blink Wear',
+    'blinkwear.in',
+    'designer ethnic wear rental',
+    'wedding outfit rental',
+  ];
 
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: `https://blinkwear.in/category/${slug}`,
     },
     openGraph: {
-      title: `${category.name} Rental | BlinkWear.in`,
+      title,
       description,
       url: `https://blinkwear.in/category/${slug}`,
       type: 'website',
-      images: [{ url: '/icon.png', width: 512, height: 512, alt: `${category.name} Rental` }],
+      images: [{ url: '/icon.png', width: 512, height: 512, alt: `${category.name} Rental BlinkWear` }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${category.name} Rental | BlinkWear.in`,
+      title,
       description,
+      images: ['/icon.png'],
     },
   };
 }

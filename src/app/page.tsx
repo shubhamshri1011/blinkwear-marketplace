@@ -27,18 +27,33 @@ import { JsonLd } from '@/components/seo/JsonLd';
 export const revalidate = 60; // ISR revalidation every 60 seconds
 
 export const metadata: Metadata = {
-  title: 'Rent Designer Lehengas, Sherwanis & Gowns | BlinkWear.in',
+  title: 'Rent Lehenga, Sherwani & Designer Wear in Bhopal | BlinkWear.in',
   description:
-    'India\'s premier luxury fashion rental marketplace. Rent bridal lehengas, groom sherwanis, bespoke tuxedos, and gowns in Bhopal & Pune with hospital-grade sanitization and doorstep returns.',
+    'BlinkWear — Bhopal\'s #1 fashion rental marketplace. Rent bridal lehengas, groom sherwanis, tuxedos & luxury gowns. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.',
+  keywords: [
+    'rental lehenga Bhopal',
+    'lehenga on rent',
+    'lehenga rent near me',
+    'BlinkWear',
+    'Blink Wear',
+    'blinkwear.in',
+    'bridal lehenga rental',
+    'sherwani on rent Bhopal',
+    'designer dress rental Bhopal',
+    'gown rental India',
+    'fashion rental',
+    'wedding outfit rental India',
+    'ethnic wear rental',
+  ],
   alternates: {
     canonical: 'https://blinkwear.in',
   },
   openGraph: {
-    title: 'Rent Designer Lehengas, Sherwanis & Gowns | BlinkWear.in',
+    title: 'Rent Lehenga, Sherwani & Designer Wear | BlinkWear.in — Bhopal',
     description:
-      'India\'s premier luxury fashion rental marketplace. Rent bridal lehengas, groom sherwanis, bespoke tuxedos, and gowns with hospital-grade sanitization and doorstep returns.',
+      'Bhopal\'s #1 fashion rental marketplace. Rent bridal lehengas, sherwanis, tuxedos & gowns. 100% sanitized, doorstep delivery. From ₹499/day.',
     url: 'https://blinkwear.in',
-    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Luxury Fashion Rental' }],
+    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear — Rent Lehenga Sherwani Bhopal' }],
   },
 };
 
@@ -177,20 +192,111 @@ export default async function HomePage() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'BlinkWear',
+    alternateName: ['Blink Wear', 'BlinkWear.in'],
     url: 'https://blinkwear.in',
-    logo: 'https://blinkwear.in/icon.png',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://blinkwear.in/icon.png',
+      width: 512,
+      height: 512,
+    },
     description:
-      'India\'s premier luxury fashion rental and resale marketplace for designer bridal lehengas, sherwanis, and luxury occasionwear.',
+      'India\'s premier fashion rental marketplace for designer bridal lehengas, groom sherwanis, tuxedos, and luxury gowns. 100% sanitized, doorstep delivery, free return pickup.',
     email: 'support@blinkwear.in',
+    telephone: '+917722958818',
     address: {
       '@type': 'PostalAddress',
+      streetAddress: 'Naveen Villa Sindhi Colony Bypass Road',
+      addressLocality: 'Bina',
+      addressRegion: 'Madhya Pradesh',
+      postalCode: '470113',
       addressCountry: 'IN',
     },
-    contactPoint: {
-      '@type': 'ContactPoint',
-      email: 'support@blinkwear.in',
-      contactType: 'customer service',
-      availableLanguage: ['English', 'Hindi'],
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        telephone: '+917722958818',
+        contactType: 'customer service',
+        availableLanguage: ['English', 'Hindi'],
+        hoursAvailable: 'Mo-Sa 10:00-20:00',
+      },
+      {
+        '@type': 'ContactPoint',
+        email: 'support@blinkwear.in',
+        contactType: 'customer service',
+      },
+    ],
+    sameAs: [
+      'https://www.instagram.com/blinkwear.in',
+    ],
+  };
+
+  const localBusinessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ClothingStore',
+    name: 'BlinkWear — Fashion Rental Bhopal',
+    alternateName: 'BlinkWear.in',
+    url: 'https://blinkwear.in',
+    logo: 'https://blinkwear.in/icon.png',
+    image: 'https://blinkwear.in/icon.png',
+    description:
+      'Rent designer bridal lehengas, groom sherwanis, tuxedos & luxury gowns in Bhopal. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.',
+    telephone: '+917722958818',
+    email: 'support@blinkwear.in',
+    priceRange: '₹₹',
+    currenciesAccepted: 'INR',
+    paymentAccepted: 'Cash, UPI, Credit Card, Debit Card, Net Banking',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Naveen Villa Sindhi Colony Bypass Road',
+      addressLocality: 'Bina',
+      addressRegion: 'Madhya Pradesh',
+      postalCode: '470113',
+      addressCountry: 'IN',
+    },
+    areaServed: [
+      { '@type': 'City', name: 'Bhopal' },
+      { '@type': 'City', name: 'Bina' },
+      { '@type': 'City', name: 'Pune' },
+      { '@type': 'State', name: 'Madhya Pradesh' },
+    ],
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '10:00',
+        closes: '20:00',
+      },
+    ],
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Designer Fashion Rentals',
+      itemListElement: [
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Bridal Lehenga Rental',
+            description: 'Rent authentic designer bridal lehengas in Bhopal. Doorstep delivery & free pickup.',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Sherwani Rental',
+            description: 'Rent premium groom sherwanis in Bhopal. Doorstep delivery & free pickup.',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Designer Gown Rental',
+            description: 'Rent luxury evening gowns and party dresses in India.',
+          },
+        },
+      ],
     },
   };
 
@@ -198,6 +304,7 @@ export default async function HomePage() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'BlinkWear',
+    alternateName: 'BlinkWear.in',
     url: 'https://blinkwear.in',
     potentialAction: {
       '@type': 'SearchAction',
@@ -211,7 +318,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-12 sm:gap-20 pb-20">
-      <JsonLd data={[organizationSchema, websiteSchema]} />
+      <JsonLd data={[organizationSchema, localBusinessSchema, websiteSchema]} />
       {/* 1. Admin Hero Banner Slider */}
       <HeroBannerSlider banners={banners} />
 

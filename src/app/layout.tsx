@@ -19,29 +19,47 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#ffffff',
+  themeColor: '#059669',
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://blinkwear.in'),
   title: {
-    default: 'BlinkWear.in — Luxury Fashion Rental & Resale Marketplace',
+    default: 'BlinkWear — Rent Lehenga, Sherwani & Designer Wear | Bhopal',
     template: '%s | BlinkWear.in',
   },
   description:
-    'Rent authentic designer bridal lehengas, groom sherwanis, tuxedos, and luxury gowns for weddings and celebrations in Bhopal, Pune, and across India. 100% sanitized, doorstep delivery & reverse pickup.',
+    'BlinkWear.in — India\'s #1 fashion rental marketplace. Rent bridal lehengas, groom sherwanis, tuxedos, and gowns in Bhopal. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.',
   keywords: [
-    'fashion rental India',
-    'lehenga rental Bhopal',
-    'sherwani rental Pune',
-    'designer bridal wear rental',
-    'luxury tuxedo rental',
-    'wedding dress rental India',
-    'sustainable luxury fashion',
     'BlinkWear',
+    'Blink Wear',
+    'blinkwear.in',
+    'rental lehenga',
+    'lehenga on rent',
+    'lehenga rent Bhopal',
+    'rental lehenga Bhopal',
+    'bridal lehenga rental',
+    'lehenga rental near me',
+    'sherwani on rent',
+    'sherwani rental Bhopal',
+    'designer dress rental India',
+    'fashion rental India',
+    'wedding outfit rental',
+    'gown on rent',
+    'tuxedo rental India',
+    'occasion wear rental',
+    'designer bridal wear rental',
+    'luxury fashion rental',
+    'pre-loved designer wear',
+    'sustainable fashion India',
+    'rent ethnic wear',
+    'lehenga choli on rent',
   ],
   alternates: {
     canonical: 'https://blinkwear.in',
+    languages: {
+      'en-IN': 'https://blinkwear.in',
+    },
   },
   robots: {
     index: true,
@@ -56,30 +74,49 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icon.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
       { url: '/favicon.ico', sizes: 'any' },
     ],
     shortcut: '/icon.png',
     apple: '/icon.png',
   },
   openGraph: {
-    title: 'BlinkWear.in — Luxury Fashion Rental & Resale',
+    title: 'BlinkWear — Rent Lehenga, Sherwani & Designer Wear',
     description:
-      'Rent iconic designer bridal wear, sherwanis, and luxury outfits. Delivered sanitized to your doorstep in Bhopal, Pune, and across India.',
+      'Rent bridal lehengas, groom sherwanis, tuxedos & luxury gowns in Bhopal. 100% sanitized, doorstep delivery, free return pickup. From ₹499/day.',
     url: 'https://blinkwear.in',
     siteName: 'BlinkWear.in',
     locale: 'en_IN',
     type: 'website',
-    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear Luxury Fashion' }],
+    images: [
+      {
+        url: '/icon.png',
+        width: 512,
+        height: 512,
+        alt: 'BlinkWear — Luxury Fashion Rental India',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BlinkWear.in — Luxury Fashion Rental & Resale',
+    title: 'BlinkWear — Rent Lehenga, Sherwani & Designer Wear',
     description:
-      'Rent iconic designer bridal wear, sherwanis, and luxury outfits. Delivered sanitized to your doorstep.',
+      'Rent iconic designer bridal lehengas, sherwanis & luxury outfits. Doorstep delivery in Bhopal. From ₹499/day.',
     images: ['/icon.png'],
+    site: '@blinkwear_in',
+    creator: '@blinkwear_in',
   },
   category: 'fashion',
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+  },
+  other: {
+    'geo.region': 'IN-MP',
+    'geo.placename': 'Bhopal',
+    'geo.position': '23.2599;77.4126',
+    'ICBM': '23.2599, 77.4126',
+    'og:locale:alternate': 'hi_IN',
+  },
 };
 
 export default function RootLayout({
@@ -88,7 +125,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${outfit.variable} h-full antialiased`}>
+    <html lang="en-IN" className={`${outfit.variable} h-full antialiased`}>
+      <head>
+        {/* Preconnect to critical third-party origins for LCP performance */}
+        <link rel="preconnect" href="https://xdxvingqvhyjmupvvxjo.supabase.co" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-white text-neutral-900 selection:bg-emerald-100 selection:text-emerald-900">
         <AuthProvider>
           <CityProvider>

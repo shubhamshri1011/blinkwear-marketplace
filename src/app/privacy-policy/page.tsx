@@ -1,4 +1,19 @@
 import React from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy — BlinkWear.in',
+  description:
+    'Read the BlinkWear Privacy Policy: how we collect, protect, and handle your personal and transaction data.',
+  alternates: {
+    canonical: 'https://blinkwear.in/privacy-policy',
+  },
+  openGraph: {
+    title: 'Privacy Policy | BlinkWear.in',
+    description: 'How we collect, protect, and handle your data on BlinkWear.',
+    url: 'https://blinkwear.in/privacy-policy',
+  },
+};
 
 export default function PrivacyPolicyPage() {
   return (

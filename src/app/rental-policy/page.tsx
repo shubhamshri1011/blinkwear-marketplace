@@ -1,5 +1,20 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Rental Policy & Agreement — BlinkWear.in',
+  description:
+    'Read the BlinkWear fashion rental agreement. Guidelines on rental periods, delivery schedules, garment care, return procedures, and damage policies.',
+  alternates: {
+    canonical: 'https://blinkwear.in/rental-policy',
+  },
+  openGraph: {
+    title: 'Rental Policy | BlinkWear.in',
+    description: 'Guidelines on rental periods, delivery schedules, garment care, and return procedures.',
+    url: 'https://blinkwear.in/rental-policy',
+  },
+};
 
 export default function RentalPolicyPage() {
   return (

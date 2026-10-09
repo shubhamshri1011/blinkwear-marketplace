@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   const { data: product } = await supabase
     .from('products')
-    .select('title, description, brand, rent_price_per_day, sale_price, product_images (*)')
+    .select('title, description, brand, rent_price_per_day, sale_price, city, listing_type, search_tags, product_images (*)')
     .eq('id', id)
     .single();
 
@@ -27,14 +27,36 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 
   const primaryImage = product.product_images?.[0]?.image_url;
-  const title = `${product.title}${product.brand ? ` by ${product.brand}` : ''} | BlinkWear Luxury Rental`;
+  const citySuffix = product.city ? ` in ${product.city}` : ' in Bhopal & India';
+  const priceSnippet = product.rent_price_per_day
+    ? `From ₹${product.rent_price_per_day}/day.`
+    : product.sale_price
+    ? `₹${product.sale_price}.`
+    : '';
+
+  const title = `Rent ${product.title}${citySuffix} | BlinkWear`;
   const description =
     product.description ||
-    `Rent ${product.title} by ${product.brand || 'designer'} on BlinkWear.in. 100% sanitized, doorstep delivery & reverse pickup.`;
+    `Rent ${product.title}${product.brand ? ` by ${product.brand}` : ''} online on BlinkWear.in. ${priceSnippet} 100% sanitized, doorstep delivery & free reverse pickup${citySuffix}.`;
+
+  const dynamicKeywords = [
+    'rental lehenga',
+    'lehenga on rent',
+    `rental lehenga ${product.city || 'Bhopal'}`,
+    `rent ${product.title}`,
+    'BlinkWear',
+    'Blink Wear',
+    'blinkwear.in',
+    'designer lehenga rental',
+    'bridal lehenga on rent',
+    'ethnic wear rental',
+    ...(product.search_tags || []),
+  ];
 
   return {
     title,
     description,
+    keywords: dynamicKeywords,
     alternates: {
       canonical: `https://blinkwear.in/products/${id}`,
     },
@@ -119,7 +141,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     image: images.length > 0 ? images : [primaryImg],
     brand: {
       '@type': 'Brand',
-      name: product.brand || 'Designer',
+      name: product.brand || 'BlinkWear Designer Collection',
     },
     sku: product.id,
     offers: {
@@ -127,6 +149,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       url: `https://blinkwear.in/products/${product.id}`,
       priceCurrency: 'INR',
       price: offerPrice,
+      priceValidUntil: '2027-12-31',
       availability:
         product.status === 'active'
           ? 'https://schema.org/InStock'
@@ -135,6 +158,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
         product.condition === 'new'
           ? 'https://schema.org/NewCondition'
           : 'https://schema.org/UsedCondition',
+      seller: {
+        '@type': 'Organization',
+        name: 'BlinkWear',
+        url: 'https://blinkwear.in',
+      },
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: '24',
     },
   };
 

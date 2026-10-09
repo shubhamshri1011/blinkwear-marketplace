@@ -48,6 +48,10 @@ export default function robots(): MetadataRoute.Robots {
           '/api/*',
         ],
       },
+      {
+        userAgent: 'Googlebot-Image',
+        allow: ['/icon.png', '/*'],
+      },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
     host: BASE_URL,

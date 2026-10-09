@@ -96,28 +96,23 @@ export function Footer() {
             </h5>
             <ul className="space-y-2.5 text-xs text-neutral-400">
               <li>
-                <Link href="/category/bridal-lehengas" className="hover:text-white transition-colors">
-                  Bridal Lehengas
+                <Link href="/category/lehengas" className="hover:text-white transition-colors">
+                  Rental Lehengas (Bhopal)
                 </Link>
               </li>
               <li>
-                <Link href="/category/sherwanis-suits" className="hover:text-white transition-colors">
-                  Groom Sherwanis
+                <Link href="/category/dresses" className="hover:text-white transition-colors">
+                  Designer Dresses
                 </Link>
               </li>
               <li>
-                <Link href="/category/gowns-dresses" className="hover:text-white transition-colors">
-                  Designer Gowns
+                <Link href="/category/sarees" className="hover:text-white transition-colors">
+                  Designer Sarees
                 </Link>
               </li>
               <li>
-                <Link href="/category/tuxedos-blazers" className="hover:text-white transition-colors">
-                  Tuxedos & Blazers
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/jewellery" className="hover:text-white transition-colors">
-                  Kundan & Polki Jewellery
+                <Link href="/category/ethnic-wear" className="hover:text-white transition-colors">
+                  Ethnic & Festive Wear
                 </Link>
               </li>
               <li>
@@ -200,6 +195,33 @@ export function Footer() {
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* SEO Popular Searches Section */}
+        <div className="py-8 border-b border-neutral-800 text-[11px] text-neutral-400 space-y-2 leading-relaxed">
+          <p className="font-semibold text-neutral-300 text-xs">Popular Searches:</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            <Link href="/category/lehengas" className="hover:text-emerald-400">Rental Lehenga Bhopal</Link>
+            <span>•</span>
+            <Link href="/category/lehengas" className="hover:text-emerald-400">Lehenga on Rent</Link>
+            <span>•</span>
+            <Link href="/category/lehengas" className="hover:text-emerald-400">Bridal Lehenga Rental</Link>
+            <span>•</span>
+            <Link href="/products?type=rent" className="hover:text-emerald-400">BlinkWear Fashion Rental</Link>
+            <span>•</span>
+            <Link href="/category/lehengas" className="hover:text-emerald-400">Lehenga Rent Near Me</Link>
+            <span>•</span>
+            <Link href="/category/ethnic-wear" className="hover:text-emerald-400">Ethnic Wear on Rent</Link>
+            <span>•</span>
+            <Link href="/category/dresses" className="hover:text-emerald-400">Designer Dress Rental</Link>
+            <span>•</span>
+            <Link href="/about" className="hover:text-emerald-400">Blink Wear India</Link>
+            <span>•</span>
+            <Link href="/become-a-seller" className="hover:text-emerald-400">Rent Out Your Lehenga</Link>
+          </div>
+          <p className="text-neutral-500 text-[10px] pt-1">
+            BlinkWear is India&apos;s premier fashion rental ecosystem operating in Bhopal, Pune, and nationwide. Rent authentic designer bridal lehengas, party wear, and groom couture with hospital-grade sanitization and doorstep returns.
+          </p>
         </div>
 
         {/* Bottom bar */}

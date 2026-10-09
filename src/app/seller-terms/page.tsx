@@ -1,6 +1,21 @@
 import React from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Store, ShieldCheck, Banknote, Sparkles } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Seller Partner Terms — BlinkWear.in',
+  description:
+    'Terms and conditions for fashion sellers and outfit lenders on BlinkWear.in: onboarding, payouts, insurance coverage, and fulfillment.',
+  alternates: {
+    canonical: 'https://blinkwear.in/seller-terms',
+  },
+  openGraph: {
+    title: 'Seller Partner Terms | BlinkWear.in',
+    description: 'Onboarding agreements, commission structure, and garment protection for sellers.',
+    url: 'https://blinkwear.in/seller-terms',
+  },
+};
 
 export default function SellerTermsPage() {
   return (

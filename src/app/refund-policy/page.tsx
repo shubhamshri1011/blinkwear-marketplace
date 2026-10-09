@@ -1,4 +1,19 @@
 import React from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Deposit & Refund Policy — BlinkWear.in',
+  description:
+    'Learn about BlinkWear security deposit refunds, turnaround times, quality inspection procedures, and payout terms.',
+  alternates: {
+    canonical: 'https://blinkwear.in/refund-policy',
+  },
+  openGraph: {
+    title: 'Refund Policy | BlinkWear.in',
+    description: 'Learn about security deposit refunds and quality inspection procedures on BlinkWear.',
+    url: 'https://blinkwear.in/refund-policy',
+  },
+};
 
 export default function RefundPolicyPage() {
   return (

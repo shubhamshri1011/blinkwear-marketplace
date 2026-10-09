@@ -1,4 +1,19 @@
 import React from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Cancellation Policy — BlinkWear.in',
+  description:
+    'Review the BlinkWear cancellation terms and timelines for designer clothing rentals and purchases.',
+  alternates: {
+    canonical: 'https://blinkwear.in/cancellation-policy',
+  },
+  openGraph: {
+    title: 'Cancellation Policy | BlinkWear.in',
+    description: 'Learn about rental and purchase cancellation timelines on BlinkWear.',
+    url: 'https://blinkwear.in/cancellation-policy',
+  },
+};
 
 export default function CancellationPolicyPage() {
   return (

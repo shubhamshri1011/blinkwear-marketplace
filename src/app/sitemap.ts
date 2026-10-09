@@ -103,21 +103,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/category/${cat.slug}`,
       lastModified: cat.created_at ? new Date(cat.created_at) : currentDate,
       changeFrequency: 'daily',
-      priority: 0.85,
+      priority: cat.slug === 'lehengas' || cat.slug === 'lehenga' ? 0.95 : 0.85,
     }));
 
-    // 2. Fetch active products from Supabase
+    // 2. Fetch active products with images from Supabase
     const { data: products } = await supabase
       .from('products')
-      .select('id, updated_at, created_at')
+      .select('id, updated_at, created_at, product_images(image_url)')
       .eq('status', 'active');
 
-    const productRoutes: MetadataRoute.Sitemap = (products || []).map((prod) => ({
-      url: `${BASE_URL}/products/${prod.id}`,
-      lastModified: prod.updated_at ? new Date(prod.updated_at) : currentDate,
-      changeFrequency: 'daily',
-      priority: 0.8,
-    }));
+    const productRoutes: MetadataRoute.Sitemap = (products || []).map((prod) => {
+      const imgUrls = ((prod as unknown as { product_images?: Array<{ image_url: string }> }).product_images || [])
+        .map((img) => img.image_url)
+        .filter(Boolean);
+
+      return {
+        url: `${BASE_URL}/products/${prod.id}`,
+        lastModified: prod.updated_at ? new Date(prod.updated_at) : currentDate,
+        changeFrequency: 'daily',
+        priority: 0.9,
+        images: imgUrls.length > 0 ? imgUrls : [`${BASE_URL}/icon.png`],
+      };
+    });
 
     return [...staticRoutes, ...categoryRoutes, ...productRoutes];
   } catch (error) {

@@ -1,5 +1,20 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Truck, RotateCcw, ShieldCheck, MapPin } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Shipping & Delivery — Doorstep Delivery & Reverse Pickup | BlinkWear.in',
+  description:
+    'Learn about BlinkWear shipping timelines, doorstep delivery 48 hours before your event, and free scheduled reverse pickup across Bhopal & India.',
+  alternates: {
+    canonical: 'https://blinkwear.in/shipping-delivery',
+  },
+  openGraph: {
+    title: 'Shipping & Delivery | BlinkWear.in',
+    description: 'Doorstep delivery and hassle-free return logistics for designer fashion rentals.',
+    url: 'https://blinkwear.in/shipping-delivery',
+  },
+};
 
 export default function ShippingDeliveryPage() {
   return (

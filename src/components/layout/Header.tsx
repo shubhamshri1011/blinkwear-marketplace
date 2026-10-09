@@ -56,13 +56,12 @@ export function Header() {
   };
 
   const categories = [
-    { name: 'All Collection', href: '/products' },
+    { name: 'All Collections', href: '/products' },
     { name: 'Rentals Only', href: '/products?type=rent' },
-    { name: 'Bridal & Lehengas', href: '/category/bridal-lehengas' },
-    { name: 'Gowns & Dresses', href: '/category/gowns-dresses' },
-    { name: 'Sherwanis & Suits', href: '/category/sherwanis-suits' },
-    { name: 'Tuxedos & Blazers', href: '/category/tuxedos-blazers' },
-    { name: 'Jewellery & Sets', href: '/category/jewellery' },
+    { name: 'Lehengas', href: '/category/lehengas' },
+    { name: 'Dresses', href: '/category/dresses' },
+    { name: 'Ethnic Wear', href: '/category/ethnic-wear' },
+    { name: 'Sarees', href: '/category/sarees' },
     { name: 'Buy Now', href: '/products?type=sale' },
   ];
 

@@ -5,6 +5,8 @@ import { ProductsFilter } from '@/components/product/ProductsFilter';
 import type { Category, ProductWithImages } from '@/types/database';
 import { Search, SlidersHorizontal } from 'lucide-react';
 
+import type { Metadata } from 'next';
+
 interface SearchPageProps {
   searchParams: Promise<{
     q?: string;
@@ -16,6 +18,19 @@ interface SearchPageProps {
     minPrice?: string;
     maxPrice?: string;
   }>;
+}
+
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  const resolved = await searchParams;
+  const term = resolved.q ? `"${resolved.q}"` : 'All Outfits';
+  return {
+    title: `Search: ${term} | BlinkWear.in`,
+    description: `Browse search results for ${term} on BlinkWear luxury fashion rental.`,
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
 }
 
 export const revalidate = 0; // Live search results
