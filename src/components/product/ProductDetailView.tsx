@@ -40,7 +40,7 @@ export function ProductDetailView({
 }: ProductDetailViewProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { selectedCity } = useCity();
+  const { selectedCity, setSelectedCity } = useCity();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -211,9 +211,8 @@ export function ProductDetailView({
       return;
     }
 
-    if (isCityMismatch) {
-      setActionError(`This rental is only available in ${product.city}.`);
-      return;
+    if (isCityMismatch && product.city) {
+      setSelectedCity(product.city);
     }
 
     if (activeMode === 'rent' && !isDateAvailable) {
@@ -241,7 +240,7 @@ export function ProductDetailView({
       setActionError(res.error || 'Failed to add item to bag.');
     } else {
       if (instantCheckout) {
-        router.push('/checkout');
+        router.push(activeMode === 'rent' ? '/checkout?type=rental' : '/checkout?type=buy');
       } else {
         router.push('/cart');
       }
@@ -453,13 +452,22 @@ export function ProductDetailView({
 
           {/* City Mismatch Warning */}
           {isCityMismatch && (
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
-              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-              <div>
-                <span className="font-semibold">City Notice:</span> This item is in{' '}
-                <strong className="underline">{product.city}</strong>, but your delivering city is{' '}
-                <strong>{selectedCity}</strong>. Local fashion rentals must take place within the same city.
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold">City Notice:</span> This item is in{' '}
+                  <strong className="underline">{product.city}</strong>, while your currently active city is{' '}
+                  <strong>{selectedCity}</strong>.
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCity(product.city!)}
+                className="px-3 py-1.5 bg-amber-900 hover:bg-amber-800 text-white rounded-lg font-bold text-xs shrink-0 self-end sm:self-auto transition-colors"
+              >
+                Switch to {product.city}
+              </button>
             </div>
           )}
 
@@ -608,7 +616,7 @@ export function ProductDetailView({
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={isSubmitting || !isDateAvailable || isCityMismatch}
+                  disabled={isSubmitting || !isDateAvailable}
                   onClick={() => handleAddToCart(false)}
                   className="py-3.5 px-4 rounded-full border border-neutral-900 text-neutral-900 font-bold text-xs hover:bg-neutral-50 transition-colors disabled:opacity-50"
                 >
@@ -616,7 +624,7 @@ export function ProductDetailView({
                 </button>
                 <button
                   type="button"
-                  disabled={isSubmitting || !isDateAvailable || isCityMismatch}
+                  disabled={isSubmitting || !isDateAvailable}
                   onClick={() => handleAddToCart(true)}
                   className="py-3.5 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
                 >
