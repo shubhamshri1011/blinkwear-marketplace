@@ -5,7 +5,7 @@ import { Truck, RotateCcw, ShieldCheck, MapPin } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Shipping & Delivery — Doorstep Delivery & Reverse Pickup | BlinkWear.in',
   description:
-    'Learn about BlinkWear shipping timelines, doorstep delivery 48 hours before your event, and free scheduled reverse pickup across Bhopal & India.',
+    'Learn about BlinkWear shipping timelines, doorstep delivery 48 hours before your event, and free scheduled reverse pickup across Pune & Bhopal.',
   alternates: {
     canonical: 'https://blinkwear.in/shipping-delivery',
   },

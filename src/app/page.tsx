@@ -27,11 +27,12 @@ import { JsonLd } from '@/components/seo/JsonLd';
 export const revalidate = 60; // ISR revalidation every 60 seconds
 
 export const metadata: Metadata = {
-  title: 'Rent Lehenga, Sherwani & Designer Wear in Bhopal | BlinkWear.in',
+  title: 'Rent Lehenga, Sherwani & Designer Wear in Pune & Bhopal | BlinkWear.in',
   description:
-    'BlinkWear — Bhopal\'s #1 fashion rental marketplace. Rent bridal lehengas, groom sherwanis, tuxedos & luxury gowns. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.',
+    'BlinkWear — Clean, fast-delivery fashion rental & resale platform in Pune and Bhopal. Rent bridal lehengas, groom sherwanis, tuxedos & luxury gowns. 100% sanitized, doorstep delivery & free return pickup.',
   keywords: [
     'rental lehenga Bhopal',
+    'rental lehenga Pune',
     'lehenga on rent',
     'lehenga rent near me',
     'BlinkWear',
@@ -39,21 +40,23 @@ export const metadata: Metadata = {
     'blinkwear.in',
     'bridal lehenga rental',
     'sherwani on rent Bhopal',
+    'sherwani on rent Pune',
     'designer dress rental Bhopal',
-    'gown rental India',
-    'fashion rental',
-    'wedding outfit rental India',
+    'designer dress rental Pune',
+    'fashion rental Pune',
+    'fashion rental Bhopal',
+    'wedding outfit rental',
     'ethnic wear rental',
   ],
   alternates: {
     canonical: 'https://blinkwear.in',
   },
   openGraph: {
-    title: 'Rent Lehenga, Sherwani & Designer Wear | BlinkWear.in — Bhopal',
+    title: 'Rent Lehenga, Sherwani & Designer Wear in Pune & Bhopal | BlinkWear.in',
     description:
-      'Bhopal\'s #1 fashion rental marketplace. Rent bridal lehengas, sherwanis, tuxedos & gowns. 100% sanitized, doorstep delivery. From ₹499/day.',
+      'Clean, fast-delivery fashion rental marketplace in Pune & Bhopal. Rent bridal lehengas, sherwanis, tuxedos & gowns. 100% sanitized, doorstep delivery.',
     url: 'https://blinkwear.in',
-    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear — Rent Lehenga Sherwani Bhopal' }],
+    images: [{ url: '/icon.png', width: 512, height: 512, alt: 'BlinkWear — Rent Lehenga Sherwani Pune Bhopal' }],
   },
 };
 
@@ -234,13 +237,13 @@ export default async function HomePage() {
   const localBusinessSchema = {
     '@context': 'https://schema.org',
     '@type': 'ClothingStore',
-    name: 'BlinkWear — Fashion Rental Bhopal',
+    name: 'BlinkWear — Fashion Platform Pune & Bhopal',
     alternateName: 'BlinkWear.in',
     url: 'https://blinkwear.in',
     logo: 'https://blinkwear.in/icon.png',
     image: 'https://blinkwear.in/icon.png',
     description:
-      'Rent designer bridal lehengas, groom sherwanis, tuxedos & luxury gowns in Bhopal. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.',
+      'Rent designer bridal lehengas, groom sherwanis, tuxedos & luxury gowns in Pune and Bhopal. 100% sanitized, doorstep delivery & free return pickup.',
     telephone: '+917722958818',
     email: 'support@blinkwear.in',
     priceRange: '₹₹',
@@ -248,16 +251,15 @@ export default async function HomePage() {
     paymentAccepted: 'Cash, UPI, Credit Card, Debit Card, Net Banking',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Naveen Villa Sindhi Colony Bypass Road',
-      addressLocality: 'Bina',
+      addressLocality: 'Bhopal',
       addressRegion: 'Madhya Pradesh',
-      postalCode: '470113',
+      postalCode: '462001',
       addressCountry: 'IN',
     },
     areaServed: [
-      { '@type': 'City', name: 'Bhopal' },
-      { '@type': 'City', name: 'Bina' },
       { '@type': 'City', name: 'Pune' },
+      { '@type': 'City', name: 'Bhopal' },
+      { '@type': 'State', name: 'Maharashtra' },
       { '@type': 'State', name: 'Madhya Pradesh' },
     ],
     openingHoursSpecification: [

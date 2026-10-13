@@ -28,6 +28,7 @@ import {
   ArrowRight,
   Phone,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 
 async function getFunctionErrorMessage(error: any, fallbackMessage: string): Promise<string> {
@@ -72,7 +73,21 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const { user, profile, refreshProfile } = useAuth();
   const { cartItems, refreshCart } = useCart();
-  const { selectedCity } = useCity();
+  const {
+    selectedCity,
+    selectedState,
+    availableStates,
+    getCitiesForState,
+    serviceAreas,
+    currentArea,
+  } = useCity();
+
+  // Helper to verify serviceability
+  const isAddressServiceable = (addr: Address) => {
+    return serviceAreas.some(
+      (area) => area.city.trim().toLowerCase() === (addr.city || '').trim().toLowerCase()
+    );
+  };
 
   const checkoutType = searchParams.get('type') || 'rental';
   const cartItemId = searchParams.get('cart_item_id');
@@ -89,8 +104,8 @@ function CheckoutContent() {
     phone: profile?.phone || '',
     address_line1: '',
     address_line2: '',
+    state: selectedState,
     city: selectedCity,
-    state: selectedCity.toLowerCase() === 'bhopal' ? 'Madhya Pradesh' : 'Maharashtra',
     pincode: '',
     is_default: true,
   });
@@ -197,8 +212,20 @@ function CheckoutContent() {
     e.preventDefault();
     if (!user) return;
 
-    if (!newAddress.address_line1 || !newAddress.pincode || !newAddress.city) {
+    if (!newAddress.address_line1 || !newAddress.pincode || !newAddress.city || !newAddress.state) {
       setErrorMessage('Please fill in complete address details.');
+      return;
+    }
+
+    const rawPhone = (newAddress.phone || contactPhone || '').replace(/\D/g, '');
+    if (rawPhone.length !== 10) {
+      setErrorMessage('Please enter a valid 10-digit mobile number for this address.');
+      return;
+    }
+
+    const cleanPincode = newAddress.pincode.replace(/\D/g, '');
+    if (cleanPincode.length !== 6) {
+      setErrorMessage('Please enter a valid 6-digit postal pincode.');
       return;
     }
 
@@ -209,12 +236,12 @@ function CheckoutContent() {
           user_id: user.id,
           label: newAddress.label,
           full_name: newAddress.full_name || profile?.full_name || 'Customer',
-          phone: newAddress.phone || contactPhone,
-          address_line1: newAddress.address_line1,
-          address_line2: newAddress.address_line2 || null,
-          city: newAddress.city,
-          state: newAddress.state,
-          pincode: newAddress.pincode,
+          phone: rawPhone,
+          address_line1: newAddress.address_line1.trim(),
+          address_line2: newAddress.address_line2?.trim() || null,
+          city: newAddress.city.trim(),
+          state: newAddress.state.trim(),
+          pincode: cleanPincode,
           is_default: addresses.length === 0,
         })
         .select()
@@ -244,6 +271,13 @@ function CheckoutContent() {
 
     if (!selectedAddress && !isAddingAddress) {
       setErrorMessage('Please select or add a delivery address.');
+      return;
+    }
+
+    if (selectedAddress && !isAddressServiceable(selectedAddress)) {
+      setErrorMessage(
+        `The selected address in ${selectedAddress.city} is not in an active service area. BlinkWear currently services Pune (Maharashtra) and Bhopal (Madhya Pradesh).`
+      );
       return;
     }
 
@@ -439,6 +473,19 @@ function CheckoutContent() {
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
           100% Prepaid via Cashfree Payments • Guaranteed Sanitization & Doorstep Delivery
         </p>
+
+        <div className="flex flex-wrap items-center gap-2 pt-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-xs font-semibold">
+            <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            Delivering in {selectedCity}
+          </span>
+          {currentArea?.delivery_promise_text && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              {currentArea.delivery_promise_text}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
@@ -490,13 +537,16 @@ function CheckoutContent() {
               <div className="space-y-3">
                 {addresses.map((addr) => {
                   const isSelected = addr.id === selectedAddressId;
+                  const isServiceable = isAddressServiceable(addr);
                   return (
                     <label
                       key={addr.id}
-                      className={`block p-4 rounded-2xl border text-xs cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-emerald-600 bg-emerald-50/30 shadow-xs'
-                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      className={`block p-4 rounded-2xl border text-xs transition-all ${
+                        !isServiceable
+                          ? 'border-neutral-200 bg-neutral-50/70 opacity-75 cursor-not-allowed'
+                          : isSelected
+                          ? 'border-emerald-600 bg-emerald-50/30 shadow-xs cursor-pointer'
+                          : 'border-neutral-200 bg-white hover:border-neutral-300 cursor-pointer'
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -504,9 +554,12 @@ function CheckoutContent() {
                           <input
                             type="radio"
                             name="address_select"
-                            checked={isSelected}
-                            onChange={() => setSelectedAddressId(addr.id)}
-                            className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+                            checked={isSelected && isServiceable}
+                            disabled={!isServiceable}
+                            onChange={() => {
+                              if (isServiceable) setSelectedAddressId(addr.id);
+                            }}
+                            className="mt-0.5 text-emerald-600 focus:ring-emerald-500 disabled:opacity-40"
                           />
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -514,6 +567,11 @@ function CheckoutContent() {
                               <span className="text-[10px] uppercase font-bold tracking-wider bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-md">
                                 {addr.label}
                               </span>
+                              {!isServiceable && (
+                                <span className="text-[10px] uppercase font-bold tracking-wider bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md">
+                                  Not Serviceable
+                                </span>
+                              )}
                             </div>
                             <p className="text-neutral-600">
                               {addr.address_line1}
@@ -525,6 +583,11 @@ function CheckoutContent() {
                             <p className="text-neutral-500 flex items-center gap-1">
                               Phone: <span className="font-semibold">{addr.phone}</span>
                             </p>
+                            {!isServiceable && (
+                              <p className="text-[11px] text-rose-600 font-medium pt-0.5">
+                                Address is outside active hubs. BlinkWear delivers in Pune & Bhopal only.
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -556,7 +619,7 @@ function CheckoutContent() {
                       required
                       placeholder="10-digit mobile number"
                       value={newAddress.phone}
-                      onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                      onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                       className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>
@@ -587,33 +650,46 @@ function CheckoutContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">City</label>
-                    <input
-                      type="text"
-                      required
-                      value={newAddress.city}
-                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
-                    />
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">State</label>
+                    <select
+                      value={newAddress.state}
+                      onChange={(e) => {
+                        const st = e.target.value;
+                        const cities = getCitiesForState(st);
+                        setNewAddress({
+                          ...newAddress,
+                          state: st,
+                          city: cities[0] || '',
+                        });
+                      }}
+                      className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
+                    >
+                      {availableStates.map((st) => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">State</label>
-                    <input
-                      type="text"
-                      required
-                      value={newAddress.state}
-                      onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
-                    />
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">City</label>
+                    <select
+                      value={newAddress.city}
+                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                      className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
+                    >
+                      {getCitiesForState(newAddress.state).map((ct) => (
+                        <option key={ct} value={ct}>{ct}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-neutral-500 block mb-1">Pincode</label>
                     <input
                       type="text"
                       required
+                      maxLength={6}
                       placeholder="6-digit pincode"
                       value={newAddress.pincode}
-                      onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                      onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                       className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 focus:outline-hidden focus:border-neutral-900"
                     />
                   </div>

@@ -56,7 +56,7 @@ export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-6">
             <Sparkles className="w-3.5 h-3.5" />
-            India&apos;s Premier Fashion Rental Hub
+            Pune &amp; Bhopal&apos;s Premier Fashion Rental Hub
           </div>
           <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
             Own the Moment. <br />

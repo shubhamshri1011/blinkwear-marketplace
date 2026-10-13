@@ -40,7 +40,7 @@ export function ProductDetailView({
 }: ProductDetailViewProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { selectedCity, setSelectedCity } = useCity();
+  const { selectedCity, setSelectedCity, currentArea } = useCity();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -414,6 +414,22 @@ export function ProductDetailView({
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 leading-snug">
               {product.title}
             </h1>
+
+            {/* City Hub & Delivery Promise */}
+            <div className="flex flex-wrap items-center gap-2 pt-2.5">
+              {product.city && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-xs font-semibold">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  Available in {product.city}
+                </span>
+              )}
+              {currentArea?.delivery_promise_text && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  {currentArea.delivery_promise_text}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Rent vs Buy Mode Switch (if both available) */}

@@ -19,14 +19,16 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
   const wishlisted = isInWishlist(product.id);
 
   const images = product.product_images && product.product_images.length > 0
-    ? product.product_images.sort((a, b) => a.sort_order - b.sort_order)
+    ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order)
     : [];
 
   const mainImageUrl = images[0]?.image_url || '/placeholder-dress.jpg';
-  const secondaryImageUrl = images[1]?.image_url || mainImageUrl;
 
   const isRental = product.listing_type === 'rent' || product.listing_type === 'both';
   const isSale = product.listing_type === 'sale' || product.listing_type === 'both';
+
+  // Sold-out overlay only for buy/both listings with stock_quantity <= 0; NEVER for rent-only
+  const isSoldOut = isSale && (product.stock_quantity != null && product.stock_quantity <= 0);
 
   const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -49,6 +51,15 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           priority={priority}
           onError={() => setImgSrc('/placeholder-dress.jpg')}
         />
+
+        {/* Sold Out Overlay for buy/both listings */}
+        {isSoldOut && (
+          <div className="absolute inset-0 bg-neutral-950/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-rose-600 text-white px-3 py-1 rounded-full shadow-md">
+              Sold Out
+            </span>
+          </div>
+        )}
 
         {/* Wishlist Button */}
         <button
@@ -118,20 +129,20 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             )}
           </div>
 
-          {/* Title */}
+          {/* Title with line-clamp-2 */}
           <Link href={`/products/${product.id}`} className="group-hover:text-emerald-700 transition-colors block">
-            <h3 className="font-medium text-neutral-900 text-xs sm:text-sm line-clamp-1 leading-snug">
+            <h3 className="font-medium text-neutral-900 text-xs sm:text-sm line-clamp-2 leading-snug">
               {product.title}
             </h3>
           </Link>
         </div>
 
-        {/* Pricing area */}
+        {/* Pricing area — never clipped */}
         <div className="pt-2 border-t border-neutral-100 flex flex-wrap items-baseline justify-between gap-1">
           {isRental && product.rent_price_per_day ? (
             <div className="min-w-0">
               <div className="flex items-baseline gap-1">
-                <span className="text-sm sm:text-base font-bold text-neutral-950">
+                <span className="text-sm sm:text-base font-bold text-neutral-950 whitespace-nowrap">
                   {formatCurrency(product.rent_price_per_day)}
                 </span>
                 <span className="text-[10px] sm:text-[11px] text-neutral-500 font-medium">/ day</span>
@@ -144,11 +155,11 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             </div>
           ) : isSale && product.sale_price ? (
             <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-sm sm:text-base font-bold text-neutral-950">
+              <span className="text-sm sm:text-base font-bold text-neutral-950 whitespace-nowrap">
                 {formatCurrency(product.discount_price || product.sale_price)}
               </span>
               {product.discount_price && product.sale_price > product.discount_price && (
-                <span className="text-xs text-neutral-400 line-through">
+                <span className="text-xs text-neutral-400 line-through whitespace-nowrap">
                   {formatCurrency(product.sale_price)}
                 </span>
               )}

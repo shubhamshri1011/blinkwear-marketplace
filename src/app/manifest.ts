@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'BlinkWear — Luxury Fashion Rental & Resale',
     short_name: 'BlinkWear',
     description:
-      'Rent authentic designer bridal lehengas, sherwanis, tuxedos, and luxury gowns in Bhopal, Pune, and across India. 100% sanitized, doorstep delivery & reverse pickup.',
+      'Rent authentic designer bridal lehengas, sherwanis, tuxedos, and luxury gowns in Pune and Bhopal. 100% sanitized, doorstep delivery & reverse pickup.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

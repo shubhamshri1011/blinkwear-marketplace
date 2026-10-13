@@ -27,6 +27,17 @@ export type Profile = {
   updated_at?: string;
 };
 
+export type ServiceArea = {
+  id: string;
+  state: string;
+  city: string;
+  is_active: boolean;
+  delivery_charge: number | null;
+  delivery_promise_text: string | null;
+  created_at: string;
+  updated_at?: string;
+};
+
 export type Category = {
   id: string;
   name: string;
@@ -403,6 +414,12 @@ export type Database = {
         Row: PlatformCity;
         Insert: Partial<PlatformCity>;
         Update: Partial<PlatformCity>;
+        Relationships: [];
+      };
+      service_areas: {
+        Row: ServiceArea;
+        Insert: Partial<ServiceArea>;
+        Update: Partial<ServiceArea>;
         Relationships: [];
       };
       profiles: {

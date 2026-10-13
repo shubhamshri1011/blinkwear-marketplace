@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCity } from '@/context/CityContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   ShoppingBag,
@@ -20,6 +21,7 @@ import {
 export default function CartPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { selectedCity, currentArea } = useCity();
   const { cartItems, removeFromCart, updateQuantity, isLoading } = useCart();
 
   if (!user && !isLoading) {
@@ -74,6 +76,19 @@ export default function CartPage() {
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
           Review your selected rentals and purchases before proceeding to secure Cashfree checkout.
         </p>
+
+        <div className="flex flex-wrap items-center gap-2 pt-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-xs font-semibold">
+            <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            Available in {selectedCity}
+          </span>
+          {currentArea?.delivery_promise_text && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              {currentArea.delivery_promise_text}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-12">
