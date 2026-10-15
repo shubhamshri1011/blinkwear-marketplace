@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sparkles,
   ShieldCheck,
@@ -70,8 +71,15 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 py-12 border-b border-neutral-800 text-sm">
           {/* Brand Info */}
           <div className="col-span-2">
-            <Link href="/" className="font-serif text-2xl font-black text-white">
-              Blink<span className="text-emerald-500 font-sans">Wear.in</span>
+            <Link href="/" className="inline-flex items-center gap-2.5 font-serif text-2xl font-black text-white group">
+              <Image
+                src="/icon-96.png"
+                alt="BlinkWear Logo"
+                width={36}
+                height={36}
+                className="w-9 h-9 object-contain rounded-lg brightness-95 group-hover:brightness-105 transition-all"
+              />
+              <span>Blink<span className="text-emerald-500 font-sans">Wear.in</span></span>
             </Link>
             <p className="text-neutral-400 text-xs mt-3 max-w-sm leading-relaxed">
               Premier luxury fashion rental and resale marketplace in Bhopal and Pune. Wear iconic designer lehengas, sherwanis, and luxury occasionwear at a fraction of retail price.

@@ -734,13 +734,22 @@ export function ProductDetailView({
 
           {/* Seller Storefront Info Card */}
           {sellerStorefront && (
-            <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200 flex items-center justify-between">
+            <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm">
-                  {sellerStorefront.store_name.charAt(0)}
+                <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative">
+                  {sellerStorefront.logo_url ? (
+                    <Image
+                      src={sellerStorefront.logo_url}
+                      alt={sellerStorefront.store_name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    sellerStorefront.store_name.charAt(0)
+                  )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h5 className="font-semibold text-xs text-neutral-900">
                       {sellerStorefront.store_name}
                     </h5>
@@ -751,15 +760,26 @@ export function ProductDetailView({
                     )}
                   </div>
                   <p className="text-[11px] text-neutral-500">
-                    BlinkWear Seller • {sellerStorefront.city}
+                    BlinkWear Partner Boutique • {sellerStorefront.city}
                   </p>
                 </div>
               </div>
 
-              <div className="text-right">
-                <span className="text-[11px] text-neutral-400">Authenticity</span>
-                <p className="text-xs font-bold text-neutral-800">100% Guaranteed</p>
-              </div>
+              {sellerStorefront.store_slug ? (
+                <Link
+                  href={`/store/${sellerStorefront.store_slug}`}
+                  className="px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors shrink-0 shadow-xs"
+                >
+                  <Store className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Visit Boutique Mini-Store</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              ) : (
+                <div className="text-right shrink-0">
+                  <span className="text-[11px] text-neutral-400">Authenticity</span>
+                  <p className="text-xs font-bold text-neutral-800">100% Guaranteed</p>
+                </div>
+              )}
             </div>
           )}
 

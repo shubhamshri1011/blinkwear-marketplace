@@ -75,11 +75,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
       { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: '/icon.png',
-    apple: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
   openGraph: {
     title: 'BlinkWear — Rent Lehenga, Sherwani & Designer Wear | Pune & Bhopal',
@@ -129,6 +134,9 @@ export default function RootLayout({
         {/* Preconnect to critical third-party origins for LCP performance */}
         <link rel="preconnect" href="https://xdxvingqvhyjmupvvxjo.supabase.co" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon-48.png" type="image/png" sizes="48x48" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-white text-neutral-900 selection:bg-emerald-100 selection:text-emerald-900">
         <AuthProvider>

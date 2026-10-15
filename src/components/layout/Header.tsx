@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCity } from '@/context/CityContext';
@@ -133,7 +134,15 @@ export function Header() {
             </button>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-1.5 group shrink-0 min-w-0">
+            <Link href="/" className="flex items-center gap-2 group shrink-0 min-w-0">
+              <Image
+                src="/icon-96.png"
+                alt="BlinkWear Logo"
+                width={36}
+                height={36}
+                className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-lg shadow-2xs group-hover:scale-105 transition-transform"
+                priority
+              />
               <span className="font-serif text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950 group-hover:text-neutral-800 transition-colors">
                 Blink<span className="text-emerald-600 font-sans">Wear</span><span className="text-emerald-500 font-sans text-lg sm:text-2xl font-bold">.in</span>
               </span>

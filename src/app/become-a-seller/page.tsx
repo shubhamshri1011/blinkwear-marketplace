@@ -22,6 +22,7 @@ import {
   Building2,
   Lock,
 } from 'lucide-react';
+import { formatStoreSlug } from '@/lib/store';
 
 interface DocFile {
   file: File;
@@ -406,6 +407,7 @@ export default function BecomeASellerPage() {
         .single();
 
       let sellerError;
+      const initialSlug = formatStoreSlug(storeName.trim()) || `boutique-${user.id.slice(0, 6)}`;
       if (existing) {
         const { error } = await supabase
           .from('seller_profiles')
@@ -430,6 +432,7 @@ export default function BecomeASellerPage() {
         const { error } = await supabase.from('seller_profiles').insert({
           id: user.id,
           store_name: storeName.trim(),
+          store_slug: initialSlug,
           owner_name: ownerName.trim(),
           email: email.trim(),
           phone: cleanPhone,

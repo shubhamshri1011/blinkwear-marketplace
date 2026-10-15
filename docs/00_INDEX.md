@@ -6,7 +6,8 @@
 
 ## 02 Technical
 
-[TRD](02_TRD.md)
+[TRD](02_TRD.md)  
+[Seller Mini-Stores & Wildcard Subdomains](SELLER_MINI_STORES_SETUP.md)
 
 ## 03
 
