@@ -13,6 +13,8 @@ export default function robots(): MetadataRoute.Robots {
           '/products/*',
           '/category/*',
           '/about',
+          '/founder',
+          '/founder/*',
           '/contact',
           '/faq',
           '/become-a-seller',

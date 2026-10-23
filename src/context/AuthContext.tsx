@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { clearClientAuthCookies } from '@/lib/supabase/cookie-options';
 import type { User } from '@supabase/supabase-js';
 import type { Profile, SellerProfile } from '@/types/database';
 
@@ -95,10 +96,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSellerProfile(null);
+    try {
+      // 1. Clear session cookies both with domain and host-only
+      clearClientAuthCookies();
+      // 2. Terminate Supabase session
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Error during signOut:', err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setSellerProfile(null);
+      // 3. Redirect to home page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    }
   };
 
   return (

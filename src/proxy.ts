@@ -11,7 +11,11 @@ export async function proxy(request: NextRequest) {
   // 1. Process Supabase auth session
   const sessionResponse = await updateSession(request);
 
-  // 2. Hostname-based subdomain detection
+  // 2. Strip client-supplied spoofed headers (Defense-in-Depth)
+  const cleanIncomingHeaders = new Headers(request.headers);
+  cleanIncomingHeaders.delete('x-store-subdomain');
+
+  // 3. Hostname-based subdomain detection (ignores www and *.vercel.app)
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
   const testSubdomain =
     request.headers.get('x-subdomain') || request.nextUrl.searchParams.get('__subdomain');
@@ -22,25 +26,16 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     const pathname = url.pathname;
 
-    // 2a. Checkout, Cart, and Webhooks must always run on the primary main domain
-    if (pathname.startsWith('/checkout') || pathname.startsWith('/cart')) {
-      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blinkwear.in';
-      const isLocalhost = Boolean(host && host.includes('localhost'));
-      const targetHost = isLocalhost && host ? `localhost:${host.split(':')[1] || '3000'}` : rootDomain;
-      const redirectUrl = new URL(`${request.nextUrl.protocol}//${targetHost}${pathname}${url.search}`);
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // Pass store subdomain in request headers so Server Components can read it via headers()
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-store-subdomain', cleanSubdomain);
+    // Set genuine x-store-subdomain header for server components
+    cleanIncomingHeaders.set('x-store-subdomain', cleanSubdomain);
 
     // If root of subdomain, rewrite internally to /store/[slug]
+    // Note: /cart and /checkout remain on the subdomain so guest localStorage cart is preserved
     if (pathname === '/') {
       url.pathname = `/store/${cleanSubdomain}`;
       const rewriteResponse = NextResponse.rewrite(url, {
         request: {
-          headers: requestHeaders,
+          headers: cleanIncomingHeaders,
         },
       });
 
@@ -52,7 +47,7 @@ export async function proxy(request: NextRequest) {
       return rewriteResponse;
     }
 
-    // Set header on sessionResponse for other routes
+    // Set header on sessionResponse for other routes (e.g. /products/[id], /cart, /checkout)
     sessionResponse.headers.set('x-store-subdomain', cleanSubdomain);
   }
 

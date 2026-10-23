@@ -54,20 +54,20 @@ export const RESERVED_SLUGS = new Set([
   'delivery',
 ]);
 
-const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
+const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/;
 
 /**
  * Validates a store subdomain slug according to DNS and platform rules.
  */
 export function validateStoreSlug(slug: string): { valid: boolean; error?: string } {
-  const raw = slug.trim();
+  const raw = slug.trim().toLowerCase();
 
   if (!raw || raw.length < 3) {
     return { valid: false, error: 'Subdomain must be at least 3 characters long' };
   }
 
-  if (raw.length > 63) {
-    return { valid: false, error: 'Subdomain cannot exceed 63 characters' };
+  if (raw.length > 30) {
+    return { valid: false, error: 'Subdomain cannot exceed 30 characters' };
   }
 
   if (raw.includes('--')) {
@@ -81,7 +81,7 @@ export function validateStoreSlug(slug: string): { valid: boolean; error?: strin
     };
   }
 
-  if (RESERVED_SLUGS.has(raw.toLowerCase())) {
+  if (RESERVED_SLUGS.has(raw)) {
     return { valid: false, error: `"${raw}" is a reserved system subdomain and cannot be used` };
   }
 
@@ -98,14 +98,15 @@ export function formatStoreSlug(input: string): string {
     .replace(/['"]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 63);
+    .slice(0, 30)
+    .replace(/-+$/, '');
 }
 
 /**
  * Extracts the seller store subdomain from an incoming hostname.
  * Handles production domains (e.g. shubhamclothing.blinkwear.in),
  * local development (e.g. shubhamclothing.localhost:3000),
- * and custom testing overrides.
+ * and ignores www / *.vercel.app preview domains.
  */
 export function getSubdomain(host: string | null): string | null {
   if (!host) return null;
@@ -118,12 +119,22 @@ export function getSubdomain(host: string | null): string | null {
     return null;
   }
 
+  // Ignore *.vercel.app deployment previews
+  if (hostname.endsWith('.vercel.app')) {
+    return null;
+  }
+
+  // Ignore www hosts
+  if (hostname === 'www' || hostname.startsWith('www.')) {
+    return null;
+  }
+
   // 1. Local development: *.localhost
   if (hostname.endsWith('.localhost')) {
     const parts = hostname.split('.');
     if (parts.length >= 2) {
       const sub = parts[0];
-      if (sub && sub !== 'localhost' && !RESERVED_SLUGS.has(sub)) {
+      if (sub && sub !== 'localhost' && sub !== 'www' && !RESERVED_SLUGS.has(sub)) {
         return sub;
       }
     }
@@ -135,8 +146,8 @@ export function getSubdomain(host: string | null): string | null {
     .toLowerCase()
     .split(':')[0];
 
-  // Exact root domain or www
-  if (hostname === rootDomain || hostname === `www.${rootDomain}`) {
+  // Exact root domain
+  if (hostname === rootDomain) {
     return null;
   }
 
@@ -146,11 +157,6 @@ export function getSubdomain(host: string | null): string | null {
     if (sub && sub !== 'www' && !RESERVED_SLUGS.has(sub)) {
       return sub;
     }
-  }
-
-  // 3. Vercel deployment preview domains: ignore standard vercel.app subdomains unless custom
-  if (hostname.endsWith('.vercel.app')) {
-    return null;
   }
 
   return null;
@@ -172,4 +178,23 @@ export function getStoreUrl(slug: string): string {
 
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blinkwear.in';
   return `https://${slug}.${rootDomain}`;
+}
+
+/**
+ * Normalizes phone numbers to include country code 91 for Indian wa.me links.
+ */
+export function formatWhatsAppLink(phone: string, text?: string): string {
+  const digits = phone.replace(/[^0-9]/g, '');
+  if (!digits) return '#';
+
+  let normalized = digits;
+  // If 10 digits (typical Indian mobile without country code), prepend 91
+  if (digits.length === 10) {
+    normalized = `91${digits}`;
+  } else if (digits.length === 11 && digits.startsWith('0')) {
+    normalized = `91${digits.slice(1)}`;
+  }
+
+  const query = text ? `?text=${encodeURIComponent(text)}` : '';
+  return `https://wa.me/${normalized}${query}`;
 }
