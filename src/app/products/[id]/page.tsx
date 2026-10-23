@@ -166,11 +166,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         url: 'https://blinkwear.in',
       },
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '24',
-    },
   };
 
   // Schema.org BreadcrumbList Schema

@@ -10,57 +10,99 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const cleanSlug = slug.toLowerCase().trim();
+// Only safe, explicitly-allow-listed columns for public store lookup
+const SAFE_PUBLIC_PROFILE_COLUMNS = [
+  'id',
+  'store_name',
+  'store_slug',
+  'store_description',
+  'tagline',
+  'city',
+  'logo_url',
+  'banner_url',
+  'accent_palette',
+  'whatsapp_number',
+  'instagram_handle',
+  'store_hours',
+  'speciality_tags',
+  'show_about',
+  'show_how_it_works',
+  'show_reviews',
+  'show_contact',
+  'diwali_theme',
+  'is_verified',
+  'created_at',
+].join(', ');
 
+async function fetchStore(slug: string): Promise<SellerPublicProfile | null> {
   const supabase = await createClient();
 
-  let store: SellerPublicProfile | null = null;
+  // Try RPC first (most restrictive — never leaks sensitive columns)
   try {
-    const { data: rpcData } = await supabase.rpc('get_store_by_slug', {
-      p_slug: cleanSlug,
-    });
+    const { data: rpcData } = await supabase.rpc('get_store_by_slug', { p_slug: slug });
     if (rpcData && rpcData.length > 0) {
-      store = rpcData[0];
+      return (rpcData[0] as unknown as SellerPublicProfile);
     }
-  } catch {
-    // Fallback query on view
-    const { data: viewData } = await supabase
-      .from('seller_public_profiles')
-      .select('id, store_name, store_slug, store_description, logo_url, banner_url, city, is_verified')
-      .ilike('store_slug', cleanSlug)
-      .maybeSingle();
-    store = viewData;
+  } catch (err) {
+    console.error('[SellerStorePage] RPC error, falling back to view:', err);
   }
+
+  // Fallback: explicit column select on the public view (never select(*))
+  const { data, error } = await supabase
+    .from('seller_public_profiles')
+    .select(SAFE_PUBLIC_PROFILE_COLUMNS)
+    .ilike('store_slug', slug)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[SellerStorePage] View fallback error:', error.message);
+    return null;
+  }
+  return (data as unknown as SellerPublicProfile) || null;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const store = await fetchStore(slug.toLowerCase().trim());
 
   if (!store) {
     return {
-      title: 'Boutique Not Found',
-      description: 'The requested seller boutique could not be found on BlinkWear.',
+      title: 'Boutique Not Found | BlinkWear',
+      description: 'The boutique you are looking for could not be found on BlinkWear.',
     };
   }
 
-  const title = `${store.store_name} — Designer Wardrobe & Rental Boutique`;
+  const title = `${store.store_name} — Designer Ethnic & Bridal Wear | Rent & Buy`;
   const description =
-    store.store_description ||
-    `Rent and buy luxury bridal lehengas, sherwanis, and gowns from ${store.store_name} in ${store.city || 'India'} on BlinkWear.`;
-  const canonicalUrl = `https://${cleanSlug}.blinkwear.in`;
+    store.tagline
+      ? `${store.tagline}. ${store.store_description || `Rent and buy designer bridal outfits from ${store.store_name} on BlinkWear.`}`
+      : store.store_description ||
+        `Rent and buy designer bridal outfits from ${store.store_name}${store.city ? ` in ${store.city}` : ''} on BlinkWear.`;
+  const canonicalUrl = `https://${store.store_slug}.blinkwear.in`;
+  const ogImage = store.banner_url || store.logo_url || 'https://blinkwear.in/icon.png';
+
+  const keywords = [
+    store.store_name,
+    `${store.store_name} lehenga`,
+    `${store.store_name} rental`,
+    store.city ? `${store.city} bridal wear` : 'bridal wear',
+    ...(store.speciality_tags || []),
+    'bridal lehenga on rent',
+    'ethnic wear rental',
+    'BlinkWear boutique',
+  ];
 
   return {
     title,
     description,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    keywords,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description,
       url: canonicalUrl,
       siteName: `${store.store_name} on BlinkWear`,
-      images: store.banner_url
-        ? [{ url: store.banner_url, width: 1200, height: 630, alt: store.store_name }]
-        : [{ url: 'https://blinkwear.in/icon.png', width: 512, height: 512, alt: store.store_name }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: store.store_name }],
       locale: 'en_IN',
       type: 'website',
     },
@@ -68,7 +110,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title,
       description,
-      images: store.banner_url ? [store.banner_url] : ['https://blinkwear.in/icon.png'],
+      images: [ogImage],
     },
   };
 }
@@ -77,35 +119,15 @@ export default async function SellerStorePage({ params }: PageProps) {
   const { slug } = await params;
   const cleanSlug = slug.toLowerCase().trim();
 
-  const supabase = await createClient();
-
-  // 1. Fetch public store profile (safe, column-restricted, active + verified only)
-  let store: SellerPublicProfile | null = null;
-  try {
-    const { data: rpcData } = await supabase.rpc('get_store_by_slug', {
-      p_slug: cleanSlug,
-    });
-    if (rpcData && rpcData.length > 0) {
-      store = rpcData[0];
-    }
-  } catch (err) {
-    console.error('[SellerStorePage] RPC error, falling back to view:', err);
-  }
+  const store = await fetchStore(cleanSlug);
 
   if (!store) {
-    const { data: viewData, error: viewErr } = await supabase
-      .from('seller_public_profiles')
-      .select('id, store_name, store_slug, store_description, logo_url, banner_url, city, is_verified')
-      .ilike('store_slug', cleanSlug)
-      .maybeSingle();
-
-    if (viewErr || !viewData) {
-      notFound();
-    }
-    store = viewData;
+    notFound();
   }
 
-  // 2. Fetch approved active products for this seller (Strictly no select('*'))
+  const supabase = await createClient();
+
+  // Fetch ONLY approved, active products — explicit column list, no select('*')
   const { data: productsData, error: prodErr } = await supabase
     .from('products')
     .select(`
@@ -137,15 +159,16 @@ export default async function SellerStorePage({ params }: PageProps) {
     `)
     .eq('seller_id', store.id)
     .eq('status', 'active')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200);
 
   if (prodErr) {
-    console.error('[SellerStorePage] Failed to fetch seller products:', prodErr);
+    console.error('[SellerStorePage] Failed to fetch seller products:', prodErr.message);
   }
 
   const products = (productsData || []) as unknown as ProductWithImages[];
 
-  // 3. Schema.org Structured Data
+  // Rich Schema.org LocalBusiness / ClothingStore
   const storeSchema = {
     '@context': 'https://schema.org',
     '@type': 'ClothingStore',
@@ -154,11 +177,21 @@ export default async function SellerStorePage({ params }: PageProps) {
     url: `https://${cleanSlug}.blinkwear.in`,
     logo: store.logo_url || 'https://blinkwear.in/icon.png',
     image: store.banner_url || store.logo_url || 'https://blinkwear.in/icon.png',
+    priceRange: '₹₹ - ₹₹₹',
+    currenciesAccepted: 'INR',
+    paymentAccepted: 'Cashfree, UPI, Net Banking, Credit Card',
+    ...(store.show_contact && store.whatsapp_number
+      ? { telephone: store.whatsapp_number }
+      : {}),
     address: {
       '@type': 'PostalAddress',
       addressLocality: store.city || 'India',
       addressCountry: 'IN',
     },
+    ...(store.store_hours ? { openingHours: store.store_hours } : {}),
+    ...(store.instagram_handle
+      ? { sameAs: [`https://instagram.com/${store.instagram_handle}`] }
+      : {}),
   };
 
   return (

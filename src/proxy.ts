@@ -22,6 +22,15 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     const pathname = url.pathname;
 
+    // 2a. Checkout, Cart, and Webhooks must always run on the primary main domain
+    if (pathname.startsWith('/checkout') || pathname.startsWith('/cart')) {
+      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blinkwear.in';
+      const isLocalhost = Boolean(host && host.includes('localhost'));
+      const targetHost = isLocalhost && host ? `localhost:${host.split(':')[1] || '3000'}` : rootDomain;
+      const redirectUrl = new URL(`${request.nextUrl.protocol}//${targetHost}${pathname}${url.search}`);
+      return NextResponse.redirect(redirectUrl);
+    }
+
     // Pass store subdomain in request headers so Server Components can read it via headers()
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-store-subdomain', cleanSubdomain);

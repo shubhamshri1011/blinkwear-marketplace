@@ -303,8 +303,19 @@ export type SellerProfile = {
   gst_number: string | null;
   pan_number: string | null;
   store_description: string | null;
+  tagline?: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  accent_palette?: string | null;
+  whatsapp_number?: string | null;
+  instagram_handle?: string | null;
+  store_hours?: string | null;
+  speciality_tags?: string[] | null;
+  show_about?: boolean;
+  show_how_it_works?: boolean;
+  show_reviews?: boolean;
+  show_contact?: boolean;
+  diwali_theme?: boolean;
   kyc_docs?: Record<string, any> | null;
   is_active: boolean;
   is_verified: boolean;
@@ -334,10 +345,23 @@ export type SellerPublicProfile = {
   store_name: string;
   store_slug: string | null;
   store_description: string | null;
+  tagline: string | null;
   city: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  accent_palette: string | null;
+  /** Only populated when show_contact is true */
+  whatsapp_number: string | null;
+  instagram_handle: string | null;
+  store_hours: string | null;
+  speciality_tags: string[] | null;
+  show_about: boolean;
+  show_how_it_works: boolean;
+  show_reviews: boolean;
+  show_contact: boolean;
+  diwali_theme: boolean;
   is_verified: boolean;
+  created_at: string;
 };
 
 export type Address = {
@@ -672,16 +696,7 @@ export type Database = {
     };
     Views: {
       seller_public_profiles: {
-        Row: {
-          id: string;
-          store_name: string;
-          store_slug: string | null;
-          store_description: string | null;
-          city: string | null;
-          logo_url: string | null;
-          banner_url: string | null;
-          is_verified: boolean;
-        };
+        Row: SellerPublicProfile;
         Relationships: [];
       };
     };

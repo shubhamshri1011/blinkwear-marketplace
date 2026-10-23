@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, formatDate, calculateRentalDays, calculateRentalPricing } from '@/lib/utils';
+import { getStoreUrl } from '@/lib/store';
 import type { PlatformSettings, ProductWithImages, SellerStorefront } from '@/types/database';
 import {
   Heart,
@@ -266,6 +267,50 @@ export function ProductDetailView({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      {/* Seller Boutique Branding Bar */}
+      {sellerStorefront && (
+        <div className="mb-6 -mt-2 p-3 sm:p-4 rounded-2xl bg-neutral-950 text-white flex items-center justify-between gap-4 shadow-sm border border-neutral-800">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-neutral-800 overflow-hidden relative shrink-0 border border-neutral-700 flex items-center justify-center font-bold text-sm">
+              {sellerStorefront.logo_url ? (
+                <Image
+                  src={sellerStorefront.logo_url}
+                  alt={sellerStorefront.store_name}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                sellerStorefront.store_name.charAt(0)
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                  Exclusive Boutique
+                </span>
+                {sellerStorefront.is_verified && (
+                  <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-emerald-300 bg-emerald-950 border border-emerald-800 px-1.5 py-0.2 rounded-full">
+                    <CheckCircle className="w-2.5 h-2.5" /> Verified
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xs sm:text-sm font-semibold truncate text-white">
+                {sellerStorefront.store_name}
+              </h2>
+            </div>
+          </div>
+          {sellerStorefront.store_slug && (
+            <Link
+              href={getStoreUrl(sellerStorefront.store_slug)}
+              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold shrink-0 transition-colors flex items-center gap-1 border border-white/15"
+            >
+              <span>Visit Boutique</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-xs text-neutral-400 mb-6 overflow-x-auto whitespace-nowrap">
         <Link href="/" className="hover:text-neutral-700 transition-colors">
