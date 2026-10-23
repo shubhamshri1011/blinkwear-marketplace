@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
   try {
     const supabaseUrl = cleanServerEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
     const serviceKey = cleanServerEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const cfSecretKey = cleanServerEnv(process.env.CF_SECRET_KEY);
+    const cfSecretKey = cleanServerEnv(process.env.CF_SECRET_KEY || process.env.CASHFREE_SECRET_KEY);
     const missingEnv = [
       !supabaseUrl ? 'NEXT_PUBLIC_SUPABASE_URL' : null,
       !serviceKey ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
-      !cfSecretKey ? 'CF_SECRET_KEY' : null,
+      !cfSecretKey ? 'CF_SECRET_KEY (or CASHFREE_SECRET_KEY)' : null,
     ].filter((name): name is string => name !== null);
 
     if (missingEnv.length > 0) {
