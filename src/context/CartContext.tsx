@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthContext';
+import { readGuestCart, saveGuestCart, clearGuestCart } from '@/lib/cart-sync';
 import type { CartItemWithProduct, PurchaseType, Product, ProductWithImages } from '@/types/database';
 
 interface AddToCartParams {
@@ -47,18 +48,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCart = useCallback(async () => {
     if (!user) {
-      // Local storage guest cart
-      try {
-        const saved = localStorage.getItem('blinkwear_guest_cart');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setCartItems(parsed);
-        } else {
-          setCartItems([]);
-        }
-      } catch {
-        setCartItems([]);
-      }
+      // Sync guest cart across subdomains via shared cookie & localStorage
+      const items = readGuestCart();
+      setCartItems(items);
       setIsLoading(false);
       return;
     }
@@ -224,7 +216,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const removeFromCart = async (cartItemId: string) => {
     if (!user) {
-      setCartItems((prev) => prev.filter((i) => i.id !== cartItemId));
+      setCartItems((prev) => {
+        const updated = prev.filter((i) => i.id !== cartItemId);
+        saveGuestCart(updated);
+        return updated;
+      });
       return;
     }
 
@@ -243,9 +239,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-      setCartItems((prev) =>
-        prev.map((i) => (i.id === cartItemId ? { ...i, quantity } : i))
-      );
+      setCartItems((prev) => {
+        const updated = prev.map((i) => (i.id === cartItemId ? { ...i, quantity } : i));
+        saveGuestCart(updated);
+        return updated;
+      });
       return;
     }
 
@@ -263,7 +261,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = async () => {
     if (!user) {
       setCartItems([]);
-      localStorage.removeItem('blinkwear_guest_cart');
+      clearGuestCart();
       return;
     }
 

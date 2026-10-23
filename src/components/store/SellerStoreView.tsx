@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import type { ProductWithImages, SellerPublicProfile } from '@/types/database';
 import { formatCurrency } from '@/lib/utils';
-import { getStoreUrl } from '@/lib/store';
+import { getStoreUrl, formatWhatsAppLink } from '@/lib/store';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const DIWALI_ENABLED = true;
@@ -301,7 +301,7 @@ function HeroSection({
               </a>
               {store.show_contact && store.whatsapp_number && (
                 <a
-                  href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, '')}`}
+                  href={formatWhatsAppLink(store.whatsapp_number, `Hi ${store.store_name}, I saw your collection on BlinkWear!`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-semibold text-sm bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all"
@@ -464,7 +464,7 @@ function CollectionSection({
           <div className="flex flex-wrap items-center justify-center gap-3">
             {store.show_contact && store.whatsapp_number && (
               <a
-                href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, '')}`}
+                href={formatWhatsAppLink(store.whatsapp_number, `Hi ${store.store_name}, I saw your collection on BlinkWear!`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white transition-all hover:scale-105"
@@ -475,12 +475,12 @@ function CollectionSection({
             )}
             {store.show_contact && store.instagram_handle && (
               <a
-                href={`https://instagram.com/${store.instagram_handle}`}
+                href={`https://instagram.com/${encodeURIComponent(store.instagram_handle.replace(/^@/, '').replace(/[^a-zA-Z0-9_.]/g, ''))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-all"
               >
-                <AtSign className="w-4 h-4" /> @{store.instagram_handle}
+                <AtSign className="w-4 h-4" /> @{store.instagram_handle.replace(/^@/, '')}
               </a>
             )}
           </div>
@@ -886,7 +886,7 @@ function ContactSection({ store, pal }: { store: SellerPublicProfile; pal: Retur
                 <div>
                   <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">WhatsApp</p>
                   <a
-                    href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, '')}`}
+                    href={formatWhatsAppLink(store.whatsapp_number, `Hi ${store.store_name}, I saw your boutique on BlinkWear!`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-semibold hover:underline"
@@ -905,13 +905,13 @@ function ContactSection({ store, pal }: { store: SellerPublicProfile; pal: Retur
                 <div>
                   <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Instagram</p>
                   <a
-                    href={`https://instagram.com/${store.instagram_handle}`}
+                    href={`https://instagram.com/${encodeURIComponent(store.instagram_handle.replace(/^@/, '').replace(/[^a-zA-Z0-9_.]/g, ''))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-semibold hover:underline"
                     style={{ color: pal.primary }}
                   >
-                    @{store.instagram_handle}
+                    @{store.instagram_handle.replace(/^@/, '')}
                   </a>
                 </div>
               </div>
@@ -977,7 +977,7 @@ function UnderSetupState({ store, pal }: { store: SellerPublicProfile; pal: Retu
       <div className="flex flex-wrap items-center justify-center gap-3">
         {store.show_contact && store.whatsapp_number && (
           <a
-            href={`https://wa.me/${store.whatsapp_number.replace(/[^0-9]/g, '')}`}
+            href={formatWhatsAppLink(store.whatsapp_number, `Hi ${store.store_name}, I saw your boutique on BlinkWear!`)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold bg-white border border-neutral-200 text-neutral-800 hover:bg-neutral-100 transition-all"
