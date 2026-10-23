@@ -201,6 +201,11 @@ export function Footer() {
                   About BlinkWear
                 </Link>
               </li>
+              <li>
+                <Link href="/founder/shubham-shrivastava" className="hover:text-emerald-400 transition-colors">
+                  Meet Our Founder
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
