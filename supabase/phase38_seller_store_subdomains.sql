@@ -54,10 +54,10 @@ BEGIN
     WHERE store_slug IS NULL
   LOOP
     -- Generate base slug: lowercase, replace non-alphanumeric with hyphens, trim hyphens
-    v_base_slug := LOWER(REGEXP_REPLACE(REGEXP_REPLACE(rec.store_name, '[^a-zA-Z0-9]+', '-', 'g'), '^-+|-+$', '', 'g'));
+    v_base_slug := LOWER(REGEXP_REPLACE(REGEXP_REPLACE(COALESCE(rec.store_name, ''), '[^a-zA-Z0-9]+', '-', 'g'), '^-+|-+$', '', 'g'));
     
-    -- If too short or empty, fallback with seller id snippet
-    IF length(v_base_slug) < 3 THEN
+    -- If too short, empty, or null, fallback with seller id snippet
+    IF v_base_slug IS NULL OR length(v_base_slug) < 3 THEN
       v_base_slug := 'boutique-' || substr(replace(rec.id::text, '-', ''), 1, 6);
     END IF;
 
@@ -109,6 +109,8 @@ ALTER VIEW public.seller_public_profiles SET (security_invoker = false);
 GRANT SELECT ON public.seller_public_profiles TO anon, authenticated;
 
 -- 6. RPC: Public storefront lookup by store_slug (Safe, zero private data exposure)
+DROP FUNCTION IF EXISTS public.get_store_by_slug(text);
+
 CREATE OR REPLACE FUNCTION public.get_store_by_slug(p_slug text)
 RETURNS TABLE (
   id uuid,
@@ -144,6 +146,8 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_store_by_slug(text) TO anon, authenticated;
 
 -- 7. RPC: Check store slug availability and format validity
+DROP FUNCTION IF EXISTS public.check_store_slug_available(text, uuid);
+
 CREATE OR REPLACE FUNCTION public.check_store_slug_available(
   p_slug text,
   p_seller_id uuid DEFAULT NULL
@@ -202,6 +206,9 @@ $$;
 GRANT EXECUTE ON FUNCTION public.check_store_slug_available(text, uuid) TO anon, authenticated;
 
 -- 8. Update get_seller_storefront RPC to include store_slug
+-- Postgres requires dropping the function before altering its return table structure (fixes ERROR: 42P13)
+DROP FUNCTION IF EXISTS public.get_seller_storefront(uuid);
+
 CREATE OR REPLACE FUNCTION public.get_seller_storefront(p_seller_id uuid)
 RETURNS TABLE (
   id uuid,
