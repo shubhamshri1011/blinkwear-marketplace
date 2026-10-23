@@ -121,8 +121,9 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 5242880,
   allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp'];
 
--- Enable RLS on storage.objects (if not already enabled)
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Note: RLS on storage.objects is already enabled by default in Supabase.
+-- Attempting to run 'ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY'
+-- causes ERROR: 42501 because storage.objects is owned by supabase_storage_admin.
 
 -- 3a. Public Read: anyone (anon + authenticated) can view images in store-assets
 DO $$
