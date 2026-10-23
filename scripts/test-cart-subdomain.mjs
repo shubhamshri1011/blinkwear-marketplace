@@ -5,13 +5,12 @@ import assert from 'node:assert';
 
 // Inline replication of cart-sync logic for standalone node execution
 export function getSharedCookieDomain(host = '') {
-  if (!host) return '';
-  if (host.endsWith('blinkwear.in')) {
+  const hostname = host.split(':')[0].toLowerCase();
+  if (!hostname) return '';
+  if (hostname === 'blinkwear.in' || hostname.endsWith('.blinkwear.in')) {
     return '; domain=.blinkwear.in';
   }
-  if (host.endsWith('localhost') || host === '127.0.0.1') {
-    return '; domain=localhost';
-  }
+  // Host-only for localhost, *.localhost, *.vercel.app
   return '';
 }
 
@@ -50,15 +49,15 @@ assert.strictEqual(
 );
 console.log('✓ PASS: Production root domain sets cookie domain to .blinkwear.in');
 
-// Test 3: Localhost Subdomain Cookie Domain
+// Test 3: Localhost Subdomain Host-Only Cookie (Browser RFC 6265 requires no Domain=localhost)
 const localSubdomain = 'anita.localhost';
 const localDomain = getSharedCookieDomain(localSubdomain);
 assert.strictEqual(
   localDomain,
-  '; domain=localhost',
-  'Local subdomain anita.localhost should share cookie across localhost'
+  '',
+  'Local subdomain anita.localhost must use host-only cookie (no Domain attribute)'
 );
-console.log('✓ PASS: Localhost subdomain sets cookie domain to localhost');
+console.log('✓ PASS: Localhost uses host-only cookie (avoids RFC 6265 rejection)');
 
 // Test 4: Cookie Payload Persistence and Decoding
 const sampleCart = [

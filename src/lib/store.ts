@@ -98,7 +98,8 @@ export function formatStoreSlug(input: string): string {
     .replace(/['"]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 30);
+    .slice(0, 30)
+    .replace(/-+$/, '');
 }
 
 /**

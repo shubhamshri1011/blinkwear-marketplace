@@ -1,27 +1,15 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/database';
-
-function getRequestCookieDomain(request: NextRequest): string | undefined {
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
-  const hostname = host.split(':')[0].toLowerCase();
-  const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'blinkwear.in').toLowerCase();
-
-  if (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) {
-    return `.${rootDomain}`;
-  }
-  if (hostname.endsWith('.localhost') || hostname === 'localhost') {
-    return 'localhost';
-  }
-  return undefined;
-}
+import { getCookieDomain } from './cookie-options';
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  const cookieDomain = getRequestCookieDomain(request);
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  const cookieDomain = getCookieDomain(host);
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

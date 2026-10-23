@@ -9,15 +9,13 @@ export const GUEST_CART_STORAGE_KEY = 'blinkwear_guest_cart';
  * as well as for local development (*.localhost).
  */
 export function getSharedCookieDomain(hostname?: string): string {
-  const host = hostname || (typeof window !== 'undefined' ? window.location.hostname : '');
+  const host = (hostname || (typeof window !== 'undefined' ? window.location.hostname : '')).split(':')[0].toLowerCase();
   if (!host) return '';
 
-  if (host.endsWith('blinkwear.in')) {
+  if (host === 'blinkwear.in' || host.endsWith('.blinkwear.in')) {
     return '; domain=.blinkwear.in';
   }
-  if (host.endsWith('localhost') || host === '127.0.0.1') {
-    return '; domain=localhost';
-  }
+  // Host-only for localhost, *.localhost, *.vercel.app
   return '';
 }
 

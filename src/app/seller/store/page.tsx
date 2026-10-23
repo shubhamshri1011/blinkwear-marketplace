@@ -243,6 +243,22 @@ export default function SellerStoreSettingsPage() {
     setStoreSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
   };
 
+  const handleAutoSlug = () => {
+    const rawCandidate = storeName || sellerProfile?.store_name || profile?.full_name || '';
+    if (!rawCandidate.trim()) {
+      setSlugStatus({
+        checking: false,
+        available: false,
+        error: 'Please enter a Boutique Name below first to auto-generate a slug',
+      });
+      return;
+    }
+    const generated = formatStoreSlug(rawCandidate);
+    setStoreSlug(generated);
+    setHasUnsaved(true);
+    checkAvailability(generated);
+  };
+
   const handleCopy = async () => {
     const url = getStoreUrl(storeSlug || 'my-boutique');
     try {
@@ -267,8 +283,11 @@ export default function SellerStoreSettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const cleanName = sanitizeText(storeName.trim(), 80);
-    if (!cleanName) { setSaveError('Store Name is required'); return; }
+    const cleanName = sanitizeText(storeName.trim(), 60);
+    if (!cleanName || cleanName.length < 2) {
+      setSaveError('Store Name must be between 2 and 60 characters');
+      return;
+    }
     const cleanSlug = storeSlug.trim().toLowerCase();
     const slugV = validateStoreSlug(cleanSlug);
     if (!slugV.valid) { setSaveError(slugV.error || 'Invalid subdomain slug'); return; }
@@ -284,28 +303,52 @@ export default function SellerStoreSettingsPage() {
       .filter(Boolean)
       .slice(0, 8);
 
+    const coreUpdatePayload: Partial<SellerProfile> = {
+      store_name: cleanName,
+      store_slug: cleanSlug,
+      store_description: sanitizeText(storeDescription.trim(), 1000) || null,
+      logo_url: logoUrl || null,
+      banner_url: bannerUrl || null,
+    };
+
+    const fullUpdatePayload: Partial<SellerProfile> = {
+      ...coreUpdatePayload,
+      tagline: sanitizeText(tagline.trim(), 120) || null,
+      accent_palette: accentPalette,
+      whatsapp_number: whatsappNumber.trim() || null,
+      instagram_handle: instagramHandle.trim().replace(/^@/, '') || null,
+      store_hours: sanitizeText(storeHours.trim(), 100) || null,
+      speciality_tags: tagsArr,
+      show_about: showAbout,
+      show_how_it_works: showHowItWorks,
+      show_reviews: showReviews,
+      show_contact: showContact,
+      diwali_theme: diwaliTheme,
+    };
+
     try {
-      const { error } = await supabase
+      let { error } = await supabase
         .from('seller_profiles')
-        .update({
-          store_name: cleanName,
-          store_slug: cleanSlug,
-          store_description: sanitizeText(storeDescription.trim(), 1000) || null,
-          tagline: sanitizeText(tagline.trim(), 120) || null,
-          logo_url: logoUrl || null,
-          banner_url: bannerUrl || null,
-          accent_palette: accentPalette,
-          whatsapp_number: whatsappNumber.trim() || null,
-          instagram_handle: instagramHandle.trim().replace(/^@/, '') || null,
-          store_hours: sanitizeText(storeHours.trim(), 200) || null,
-          speciality_tags: tagsArr,
-          show_about: showAbout,
-          show_how_it_works: showHowItWorks,
-          show_reviews: showReviews,
-          show_contact: showContact,
-          diwali_theme: diwaliTheme,
-        } as Partial<SellerProfile>)
+        .update(fullUpdatePayload)
         .eq('id', user.id);
+
+      // Graceful fallback if database schema does not yet have Phase 41 V2 columns
+      if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+        console.warn('Advanced Storefront V2 columns missing in database; falling back to core profile fields:', error.message);
+        const fallbackRes = await supabase
+          .from('seller_profiles')
+          .update(coreUpdatePayload)
+          .eq('id', user.id);
+        error = fallbackRes.error;
+        if (!error) {
+          await refreshProfile();
+          setSaveSuccess(true);
+          setHasUnsaved(false);
+          setSaveError('Boutique core identity & logo saved. (Note: extended theme/tags require applying migration phase41_storefront_v2.sql).');
+          setTimeout(() => setSaveSuccess(false), 5000);
+          return;
+        }
+      }
 
       if (error) throw error;
       await refreshProfile();
@@ -313,6 +356,7 @@ export default function SellerStoreSettingsPage() {
       setHasUnsaved(false);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err: unknown) {
+      console.error('Error saving seller store:', err);
       setSaveError((err as Error).message || 'Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
@@ -531,8 +575,8 @@ export default function SellerStoreSettingsPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setStoreSlug(formatStoreSlug(storeName))}
-                      title="Auto-generate from name"
+                      onClick={handleAutoSlug}
+                      title="Auto-generate from boutique name"
                       className="px-3 py-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 text-xs font-semibold flex items-center gap-1 transition-colors shrink-0"
                     >
                       <RefreshCw className="w-3.5 h-3.5" /> Auto
