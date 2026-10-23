@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sparkles,
   ShieldCheck,
@@ -70,17 +71,24 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 py-12 border-b border-neutral-800 text-sm">
           {/* Brand Info */}
           <div className="col-span-2">
-            <Link href="/" className="font-serif text-2xl font-black text-white">
-              Blink<span className="text-emerald-500 font-sans">Wear.in</span>
+            <Link href="/" className="inline-flex items-center gap-2.5 font-serif text-2xl font-black text-white group">
+              <Image
+                src="/icon-96.png"
+                alt="BlinkWear Logo"
+                width={36}
+                height={36}
+                className="w-9 h-9 object-contain rounded-lg brightness-95 group-hover:brightness-105 transition-all"
+              />
+              <span>Blink<span className="text-emerald-500 font-sans">Wear.in</span></span>
             </Link>
             <p className="text-neutral-400 text-xs mt-3 max-w-sm leading-relaxed">
-              India&apos;s premier luxury fashion rental and resale marketplace. Wear iconic designer lehengas, sherwanis, and luxury occasionwear at a fraction of the retail price.
+              Premier luxury fashion rental and resale marketplace in Bhopal and Pune. Wear iconic designer lehengas, sherwanis, and luxury occasionwear at a fraction of retail price.
             </p>
 
             <div className="mt-6 flex flex-col gap-2 text-xs text-neutral-400">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Operating Hubs: Bhopal & Pune (Expansion Ongoing)</span>
+                <span>Operating Hubs: Bhopal (Madhya Pradesh) &amp; Pune (Maharashtra)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -220,7 +228,7 @@ export function Footer() {
             <Link href="/become-a-seller" className="hover:text-emerald-400">Rent Out Your Lehenga</Link>
           </div>
           <p className="text-neutral-500 text-[10px] pt-1">
-            BlinkWear is India&apos;s premier fashion rental ecosystem operating in Bhopal, Pune, and nationwide. Rent authentic designer bridal lehengas, party wear, and groom couture with hospital-grade sanitization and doorstep returns.
+            BlinkWear is a clean, fast-delivery fashion platform operating exclusively in Bhopal (Madhya Pradesh) and Pune (Maharashtra). Rent authentic designer bridal lehengas, party wear, and groom couture with hospital-grade sanitization and doorstep returns.
           </p>
         </div>
 

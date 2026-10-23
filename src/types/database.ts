@@ -27,6 +27,17 @@ export type Profile = {
   updated_at?: string;
 };
 
+export type ServiceArea = {
+  id: string;
+  state: string;
+  city: string;
+  is_active: boolean;
+  delivery_charge: number | null;
+  delivery_promise_text: string | null;
+  created_at: string;
+  updated_at?: string;
+};
+
 export type Category = {
   id: string;
   name: string;
@@ -279,6 +290,7 @@ export type SellerVerificationStatus = 'not_verified' | 'pending' | 'verified' |
 export type SellerProfile = {
   id: string;
   store_name: string;
+  store_slug: string | null;
   owner_name: string;
   phone: string;
   email: string;
@@ -305,6 +317,7 @@ export type SellerProfile = {
 export type SellerStorefront = {
   id: string;
   store_name: string;
+  store_slug: string | null;
   store_description: string | null;
   logo_url: string | null;
   banner_url: string | null;
@@ -319,6 +332,7 @@ export type SellerStorefront = {
 export type SellerPublicProfile = {
   id: string;
   store_name: string;
+  store_slug: string | null;
   store_description: string | null;
   city: string | null;
   logo_url: string | null;
@@ -403,6 +417,12 @@ export type Database = {
         Row: PlatformCity;
         Insert: Partial<PlatformCity>;
         Update: Partial<PlatformCity>;
+        Relationships: [];
+      };
+      service_areas: {
+        Row: ServiceArea;
+        Insert: Partial<ServiceArea>;
+        Update: Partial<ServiceArea>;
         Relationships: [];
       };
       profiles: {
@@ -655,6 +675,7 @@ export type Database = {
         Row: {
           id: string;
           store_name: string;
+          store_slug: string | null;
           store_description: string | null;
           city: string | null;
           logo_url: string | null;
@@ -668,6 +689,23 @@ export type Database = {
       increment_product_views: {
         Args: { p_product_id: string };
         Returns: void;
+      };
+      get_store_by_slug: {
+        Args: { p_slug: string };
+        Returns: {
+          id: string;
+          store_name: string;
+          store_slug: string | null;
+          store_description: string | null;
+          logo_url: string | null;
+          banner_url: string | null;
+          city: string | null;
+          is_verified: boolean;
+        }[];
+      };
+      check_store_slug_available: {
+        Args: { p_slug: string; p_seller_id?: string | null };
+        Returns: { available: boolean; reason?: string };
       };
       get_seller_storefront: {
         Args: { p_seller_id: string };

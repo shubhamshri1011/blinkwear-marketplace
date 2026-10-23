@@ -42,7 +42,7 @@ export default function FAQPage() {
     },
     {
       q: 'Which cities does BlinkWear currently operate in?',
-      a: 'We currently offer direct same-city doorstep delivery and reverse pickup in Bhopal (Madhya Pradesh) and Pune (Maharashtra). We are expanding to Indore, Mumbai, Delhi-NCR, and Bengaluru soon!',
+      a: 'We currently offer direct same-city doorstep delivery and reverse pickup exclusively in Pune (Maharashtra) and Bhopal (Madhya Pradesh).',
     },
     {
       q: 'How can I monetize my own bridal or designer wardrobe?',

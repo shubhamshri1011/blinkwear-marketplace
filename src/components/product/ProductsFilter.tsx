@@ -95,20 +95,9 @@ export function ProductsFilter({ categories, availableCities }: ProductsFilterPr
       {/* City Filter */}
       <div>
         <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-3">
-          Location Hub
+          Service Area
         </label>
         <div className="space-y-1.5">
-          <button
-            onClick={() => updateParam('city', null)}
-            className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg text-left transition-colors ${
-              !currentCity
-                ? 'bg-emerald-50 text-emerald-800 font-semibold'
-                : 'text-neutral-700 hover:bg-neutral-50'
-            }`}
-          >
-            <span>All Cities</span>
-            {!currentCity && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-          </button>
           {availableCities.map((city) => {
             const isSelected = currentCity.toLowerCase() === city.toLowerCase();
             return (

@@ -40,7 +40,7 @@ export function ProductDetailView({
 }: ProductDetailViewProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { selectedCity } = useCity();
+  const { selectedCity, setSelectedCity, currentArea } = useCity();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -211,9 +211,8 @@ export function ProductDetailView({
       return;
     }
 
-    if (isCityMismatch) {
-      setActionError(`This rental is only available in ${product.city}.`);
-      return;
+    if (isCityMismatch && product.city) {
+      setSelectedCity(product.city);
     }
 
     if (activeMode === 'rent' && !isDateAvailable) {
@@ -241,7 +240,7 @@ export function ProductDetailView({
       setActionError(res.error || 'Failed to add item to bag.');
     } else {
       if (instantCheckout) {
-        router.push('/checkout');
+        router.push(activeMode === 'rent' ? '/checkout?type=rental' : '/checkout?type=buy');
       } else {
         router.push('/cart');
       }
@@ -415,6 +414,22 @@ export function ProductDetailView({
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 leading-snug">
               {product.title}
             </h1>
+
+            {/* City Hub & Delivery Promise */}
+            <div className="flex flex-wrap items-center gap-2 pt-2.5">
+              {product.city && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-xs font-semibold">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  Available in {product.city}
+                </span>
+              )}
+              {currentArea?.delivery_promise_text && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  {currentArea.delivery_promise_text}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Rent vs Buy Mode Switch (if both available) */}
@@ -453,13 +468,22 @@ export function ProductDetailView({
 
           {/* City Mismatch Warning */}
           {isCityMismatch && (
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
-              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-              <div>
-                <span className="font-semibold">City Notice:</span> This item is in{' '}
-                <strong className="underline">{product.city}</strong>, but your delivering city is{' '}
-                <strong>{selectedCity}</strong>. Local fashion rentals must take place within the same city.
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold">City Notice:</span> This item is in{' '}
+                  <strong className="underline">{product.city}</strong>, while your currently active city is{' '}
+                  <strong>{selectedCity}</strong>.
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCity(product.city!)}
+                className="px-3 py-1.5 bg-amber-900 hover:bg-amber-800 text-white rounded-lg font-bold text-xs shrink-0 self-end sm:self-auto transition-colors"
+              >
+                Switch to {product.city}
+              </button>
             </div>
           )}
 
@@ -608,7 +632,7 @@ export function ProductDetailView({
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={isSubmitting || !isDateAvailable || isCityMismatch}
+                  disabled={isSubmitting || !isDateAvailable}
                   onClick={() => handleAddToCart(false)}
                   className="py-3.5 px-4 rounded-full border border-neutral-900 text-neutral-900 font-bold text-xs hover:bg-neutral-50 transition-colors disabled:opacity-50"
                 >
@@ -616,7 +640,7 @@ export function ProductDetailView({
                 </button>
                 <button
                   type="button"
-                  disabled={isSubmitting || !isDateAvailable || isCityMismatch}
+                  disabled={isSubmitting || !isDateAvailable}
                   onClick={() => handleAddToCart(true)}
                   className="py-3.5 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
                 >
@@ -710,13 +734,22 @@ export function ProductDetailView({
 
           {/* Seller Storefront Info Card */}
           {sellerStorefront && (
-            <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200 flex items-center justify-between">
+            <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm">
-                  {sellerStorefront.store_name.charAt(0)}
+                <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative">
+                  {sellerStorefront.logo_url ? (
+                    <Image
+                      src={sellerStorefront.logo_url}
+                      alt={sellerStorefront.store_name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    sellerStorefront.store_name.charAt(0)
+                  )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h5 className="font-semibold text-xs text-neutral-900">
                       {sellerStorefront.store_name}
                     </h5>
@@ -727,15 +760,26 @@ export function ProductDetailView({
                     )}
                   </div>
                   <p className="text-[11px] text-neutral-500">
-                    BlinkWear Seller • {sellerStorefront.city}
+                    BlinkWear Partner Boutique • {sellerStorefront.city}
                   </p>
                 </div>
               </div>
 
-              <div className="text-right">
-                <span className="text-[11px] text-neutral-400">Authenticity</span>
-                <p className="text-xs font-bold text-neutral-800">100% Guaranteed</p>
-              </div>
+              {sellerStorefront.store_slug ? (
+                <Link
+                  href={`/store/${sellerStorefront.store_slug}`}
+                  className="px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors shrink-0 shadow-xs"
+                >
+                  <Store className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Visit Boutique Mini-Store</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              ) : (
+                <div className="text-right shrink-0">
+                  <span className="text-[11px] text-neutral-400">Authenticity</span>
+                  <p className="text-xs font-bold text-neutral-800">100% Guaranteed</p>
+                </div>
+              )}
             </div>
           )}
 

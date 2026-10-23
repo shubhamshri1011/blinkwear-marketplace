@@ -50,7 +50,7 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: 'Googlebot-Image',
-        allow: ['/icon.png', '/*'],
+        allow: ['/favicon.ico', '/icon.png', '/icon-*.png', '/apple-touch-icon.png', '/*'],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
