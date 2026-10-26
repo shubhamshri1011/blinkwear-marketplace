@@ -45,6 +45,7 @@ export type Category = {
   parent_id: string | null;
   icon_url: string | null;
   sort_order: number;
+  show_in_strip?: boolean;
   is_active: boolean;
   created_at: string;
 };
@@ -267,6 +268,7 @@ export type RentalBookingWithDetails = RentalBooking & {
 
 export type BannerPanel = 'buyer';
 export type BannerTargetType = 'product' | 'category' | 'subcategory' | 'url' | 'none';
+export type BannerPlacement = 'hero_carousel' | 'top_strip' | 'mid_tiles' | 'category_banner';
 
 export type Banner = {
   id: string;
@@ -274,6 +276,9 @@ export type Banner = {
   subtitle: string | null;
   cta_label: string | null;
   image_url: string;
+  mobile_image_url?: string | null;
+  alt_text?: string | null;
+  placement?: BannerPlacement;
   panel: BannerPanel;
   target_type: BannerTargetType;
   target_value: string | null;
@@ -282,6 +287,70 @@ export type Banner = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  updated_at: string;
+};
+
+export type HomepageBlockType =
+  | 'product_row'
+  | 'category_tiles'
+  | 'occasion_tiles'
+  | 'banner_group'
+  | 'trust_strip'
+  | 'seller_cta';
+
+export type HomepageBlockSourceType = 'rule' | 'category' | 'curated';
+export type HomepageBlockSourceRule = 'newest' | 'featured' | 'trending_rentals' | 'popular_buys';
+
+export type TileItem = {
+  title: string;
+  subtitle?: string;
+  image_url?: string;
+  href: string;
+};
+
+export type HomepageBlock = {
+  id: string;
+  block_type: HomepageBlockType;
+  title: string;
+  subtitle: string | null;
+  view_all_href: string | null;
+  source_type: HomepageBlockSourceType;
+  source_rule: HomepageBlockSourceRule | null;
+  category_id: string | null;
+  curated_product_ids: string[];
+  banner_ids: string[];
+  custom_tiles?: TileItem[];
+  item_limit: number;
+  city_filter: 'all' | 'Pune' | 'Bhopal';
+  sort_order: number;
+  is_active: boolean;
+  start_at: string | null;
+  end_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TrustBadgeIcon =
+  | 'shield-check'
+  | 'truck'
+  | 'check-circle'
+  | 'sparkles'
+  | 'badge-check'
+  | 'tag'
+  | 'heart'
+  | 'lock';
+
+export type TrustBadge = {
+  icon: TrustBadgeIcon;
+  title: string;
+  description: string;
+};
+
+export type SiteThemeSettings = {
+  is_singleton: boolean;
+  accent_color: string;
+  logo_url: string | null;
+  trust_badges: TrustBadge[];
   updated_at: string;
 };
 
@@ -692,6 +761,26 @@ export type Database = {
             referencedColumns: ['id'];
           }
         ];
+      };
+      homepage_blocks: {
+        Row: HomepageBlock;
+        Insert: Partial<HomepageBlock>;
+        Update: Partial<HomepageBlock>;
+        Relationships: [
+          {
+            foreignKeyName: 'homepage_blocks_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      site_theme_settings: {
+        Row: SiteThemeSettings;
+        Insert: Partial<SiteThemeSettings>;
+        Update: Partial<SiteThemeSettings>;
+        Relationships: [];
       };
     };
     Views: {
