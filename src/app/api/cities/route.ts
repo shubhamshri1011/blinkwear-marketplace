@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createCatalogClient } from '@/lib/supabase/catalog';
+import { hasSupabaseEnv } from '@/lib/supabase/env';
 
-export const revalidate = 300; // Cache for 5 minutes
+export const dynamic = 'force-dynamic';
 
 export const DEFAULT_SERVICE_AREAS = [
   { state: 'Madhya Pradesh', city: 'Bhopal', is_active: true, delivery_charge: null, delivery_promise_text: null },
@@ -9,8 +10,24 @@ export const DEFAULT_SERVICE_AREAS = [
 ];
 
 export async function GET() {
+  if (!hasSupabaseEnv()) {
+    console.error(
+      '[API /api/cities] Supabase environment variables missing; returning default service areas fallback.'
+    );
+    return NextResponse.json({
+      areas: DEFAULT_SERVICE_AREAS,
+      cities: DEFAULT_SERVICE_AREAS.map((a) => a.city),
+    });
+  }
+
   try {
-    const supabase = await createCatalogClient();
+    const supabase = createCatalogClient();
+    if (!supabase) {
+      return NextResponse.json({
+        areas: DEFAULT_SERVICE_AREAS,
+        cities: DEFAULT_SERVICE_AREAS.map((a) => a.city),
+      });
+    }
     const { data, error } = await supabase
       .from('service_areas')
       .select('state, city, is_active, delivery_charge, delivery_promise_text')

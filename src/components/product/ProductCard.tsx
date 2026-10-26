@@ -15,14 +15,20 @@ interface ProductCardProps {
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
-  if (!product || !product.id) return null;
-  const wishlisted = isInWishlist(product.id);
 
-  const images = product.product_images && product.product_images.length > 0
+  const images = product?.product_images && product.product_images.length > 0
     ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order)
     : [];
 
   const mainImageUrl = images[0]?.image_url || '/placeholder-dress.jpg';
+  const [imgSrc, setImgSrc] = React.useState(mainImageUrl);
+
+  React.useEffect(() => {
+    setImgSrc(mainImageUrl);
+  }, [mainImageUrl]);
+
+  if (!product || !product.id) return null;
+  const wishlisted = isInWishlist(product.id);
 
   const isRental = product.listing_type === 'rent' || product.listing_type === 'both';
   const isSale = product.listing_type === 'sale' || product.listing_type === 'both';
@@ -35,8 +41,6 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     e.stopPropagation();
     await toggleWishlist(product.id);
   };
-
-  const [imgSrc, setImgSrc] = React.useState(mainImageUrl);
 
   return (
     <div className="group relative flex flex-col bg-white rounded-2xl border border-neutral-100 overflow-hidden hover:shadow-xl hover:border-neutral-200 transition-all duration-300">

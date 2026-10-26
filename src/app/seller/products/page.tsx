@@ -153,9 +153,9 @@ export default function SellerProductsPage() {
                         Awaiting admin approval before it appears to buyers.
                       </p>
                     )}
-                    {product.status === 'rejected' && (product as any).rejection_reason && (
+                    {product.status === 'rejected' && product.rejection_reason && (
                       <p className="text-[10px] text-rose-700 mt-0.5">
-                        Rejected: {(product as any).rejection_reason}
+                        Rejected: {product.rejection_reason}
                       </p>
                     )}
                   </div>

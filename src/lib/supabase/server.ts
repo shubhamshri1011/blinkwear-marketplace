@@ -3,6 +3,7 @@ import { cookies, headers } from 'next/headers';
 import type { Database } from '@/types/database';
 import { createCatalogClient } from './catalog';
 import { getCookieDomain } from './cookie-options';
+import { getSupabaseEnv } from './env';
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -18,14 +19,18 @@ export async function createClient() {
   );
 
   if (!hasUserSession) {
-    // Guest visitor — use the catalog client so public catalog queries
-    // succeed without RLS permission errors.
-    return createCatalogClient();
+    // Guest visitor — try catalog client first
+    const catalogClient = createCatalogClient();
+    if (catalogClient) {
+      return catalogClient;
+    }
   }
 
+  const { url, anonKey } = getSupabaseEnv();
+
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookieOptions: cookieDomain ? { domain: cookieDomain } : undefined,
       cookies: {
@@ -48,3 +53,4 @@ export async function createClient() {
     }
   );
 }
+

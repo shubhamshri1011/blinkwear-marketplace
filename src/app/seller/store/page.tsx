@@ -741,7 +741,7 @@ export default function SellerStoreSettingsPage() {
                 <Phone className="w-4 h-4 text-emerald-600" /> Contact & Social
               </h3>
               <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">
-                ⚠ These details are shown publicly on your storefront only when "Show Contact" is turned on. Use only a business WhatsApp number.
+                ⚠ These details are shown publicly on your storefront only when &quot;Show Contact&quot; is turned on. Use only a business WhatsApp number.
               </p>
               <div className="space-y-4">
                 <div>

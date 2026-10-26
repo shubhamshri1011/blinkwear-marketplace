@@ -31,18 +31,19 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-async function getFunctionErrorMessage(error: any, fallbackMessage: string): Promise<string> {
+async function getFunctionErrorMessage(error: unknown, fallbackMessage: string): Promise<string> {
   if (!error) return fallbackMessage;
+  const err = error as { context?: { json?: () => Promise<{ error?: string; message?: string }>; text?: () => Promise<string> }; message?: string };
   try {
-    if (error.context && typeof error.context.json === 'function') {
-      const body = await error.context.json();
+    if (err.context && typeof err.context.json === 'function') {
+      const body = await err.context.json();
       if (body?.error && typeof body.error === 'string') return body.error;
       if (body?.message && typeof body.message === 'string') return body.message;
     }
   } catch {
     try {
-      if (error.context && typeof error.context.text === 'function') {
-        const text = await error.context.text();
+      if (err.context && typeof err.context.text === 'function') {
+        const text = await err.context.text();
         if (text) {
           try {
             const parsed = JSON.parse(text);
@@ -55,8 +56,8 @@ async function getFunctionErrorMessage(error: any, fallbackMessage: string): Pro
       }
     } catch {}
   }
-  return error.message && error.message !== 'Edge Function returned a non-2xx status code'
-    ? error.message
+  return err.message && err.message !== 'Edge Function returned a non-2xx status code'
+    ? err.message
     : fallbackMessage;
 }
 

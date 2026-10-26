@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthContext';
 import type { WishlistItemWithProduct } from '@/types/database';
@@ -27,7 +27,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState<WishlistItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const supabase = createClient();
+
+  // Lazy client: only instantiated in browser / client runtime, never during SSR or static prerendering at build
+  const supabase = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return createClient();
+  }, []);
 
   const fetchWishlist = useCallback(async () => {
     if (!user) {
@@ -36,9 +43,15 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const client = supabase || (typeof window !== 'undefined' ? createClient() : null);
+    if (!client) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('wishlist_items')
         .select(`
           id,
@@ -112,11 +125,16 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'Please sign in to save items to your wishlist' };
     }
 
+    const client = supabase || (typeof window !== 'undefined' ? createClient() : null);
+    if (!client) {
+      return { success: false, error: 'Service temporarily unavailable' };
+    }
+
     try {
       const existing = wishlistItems.find((item) => item.product_id === productId);
 
       if (existing) {
-        const { error } = await supabase
+        const { error } = await client
           .from('wishlist_items')
           .delete()
           .eq('id', existing.id);
@@ -126,7 +144,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         setWishlistItems((prev) => prev.filter((item) => item.id !== existing.id));
         return { success: true, isWishlisted: false };
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('wishlist_items')
           .insert({
             user_id: user.id,
@@ -172,7 +190,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
         if (error) throw error;
 
-        if (data && (data as any).product) {
+        if (data && typeof data === 'object' && 'product' in data && data.product) {
           setWishlistItems((prev) => [data as unknown as WishlistItemWithProduct, ...prev]);
         }
         return { success: true, isWishlisted: true };
