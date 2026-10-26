@@ -7,6 +7,11 @@ import { CartProvider } from '@/context/CartContext';
 import { WishlistProvider } from '@/context/WishlistContext';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { ThemeStyleInjector } from '@/components/layout/ThemeStyleInjector';
+import { getSiteThemeSettings } from '@/lib/theme';
+import { createCatalogClient } from '@/lib/supabase/catalog';
+import type { Category } from '@/types/database';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -19,7 +24,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#059669',
+  themeColor: '#0F0F11',
 };
 
 export const metadata: Metadata = {
@@ -123,11 +128,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const themeSettings = await getSiteThemeSettings();
+
+  const catalogClient = createCatalogClient();
+  let categories: Category[] = [];
+  if (catalogClient) {
+    try {
+      const { data } = await catalogClient
+        .from('categories')
+        .select('id, name, slug, parent_id, icon_url, sort_order, is_active, show_in_strip, created_at')
+        .eq('is_active', true)
+        .is('parent_id', null)
+        .order('sort_order', { ascending: true });
+      if (data) {
+        categories = data as Category[];
+      }
+    } catch {
+      categories = [];
+    }
+  }
+
   return (
     <html lang="en-IN" className={`${outfit.variable} h-full antialiased`}>
       <head>
@@ -138,14 +163,16 @@ export default function RootLayout({
         <link rel="icon" href="/icon-48.png" type="image/png" sizes="48x48" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className="min-h-full flex flex-col font-sans bg-white text-neutral-900 selection:bg-emerald-100 selection:text-emerald-900">
+      <body className="min-h-full flex flex-col font-sans bg-white text-neutral-900 selection:bg-orange-100 selection:text-orange-900">
+        <ThemeStyleInjector accentColor={themeSettings.accent_color} />
         <AuthProvider>
           <CityProvider>
             <CartProvider>
               <WishlistProvider>
-                <Header />
-                <main className="flex-1">{children}</main>
+                <Header logoUrl={themeSettings.logo_url} categories={categories} />
+                <main className="flex-1 pb-14 md:pb-0">{children}</main>
                 <Footer />
+                <MobileBottomNav />
               </WishlistProvider>
             </CartProvider>
           </CityProvider>

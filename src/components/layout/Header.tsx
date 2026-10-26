@@ -26,8 +26,15 @@ import {
   Store,
   Compass,
 } from 'lucide-react';
+import type { Category } from '@/types/database';
+import { CategoryIconStrip } from './CategoryIconStrip';
 
-export function Header() {
+export interface HeaderProps {
+  logoUrl?: string | null;
+  categories?: Category[];
+}
+
+export function Header({ logoUrl, categories: propCategories = [] }: HeaderProps) {
   const router = useRouter();
   const { user, profile, sellerProfile, signOut } = useAuth();
   const { selectedCity } = useCity();
@@ -56,15 +63,16 @@ export function Header() {
     }
   };
 
-  const categories = [
-    { name: 'All Collections', href: '/products' },
-    { name: 'Rentals Only', href: '/products?type=rent' },
-    { name: 'Lehengas', href: '/category/lehengas' },
-    { name: 'Dresses', href: '/category/dresses' },
-    { name: 'Ethnic Wear', href: '/category/ethnic-wear' },
-    { name: 'Sarees', href: '/category/sarees' },
-    { name: 'Buy Now', href: '/products?type=sale' },
+  const defaultCategories = [
+    { id: '1', name: 'All Collections', slug: 'all', href: '/products', show_in_strip: true, is_active: true, sort_order: 1, parent_id: null, icon_url: null, created_at: '' },
+    { id: '2', name: 'Lehengas', slug: 'lehengas', href: '/category/lehengas', show_in_strip: true, is_active: true, sort_order: 2, parent_id: null, icon_url: null, created_at: '' },
+    { id: '3', name: 'Sherwanis', slug: 'sherwanis', href: '/category/sherwanis', show_in_strip: true, is_active: true, sort_order: 3, parent_id: null, icon_url: null, created_at: '' },
+    { id: '4', name: 'Dresses', slug: 'dresses', href: '/category/dresses', show_in_strip: true, is_active: true, sort_order: 4, parent_id: null, icon_url: null, created_at: '' },
+    { id: '5', name: 'Ethnic Wear', slug: 'ethnic-wear', href: '/category/ethnic-wear', show_in_strip: true, is_active: true, sort_order: 5, parent_id: null, icon_url: null, created_at: '' },
+    { id: '6', name: 'Sarees', slug: 'sarees', href: '/category/sarees', show_in_strip: true, is_active: true, sort_order: 6, parent_id: null, icon_url: null, created_at: '' },
   ];
+
+  const categories = propCategories && propCategories.length > 0 ? propCategories : defaultCategories;
 
   return (
     <>
@@ -133,23 +141,50 @@ export function Header() {
               )}
             </button>
 
-            {/* Logo */}
+            {/* Logo: Theme logo if configured, else default BlinkWear mark */}
             <Link href="/" className="flex items-center gap-2 group shrink-0 min-w-0">
-              <Image
-                src="/icon-96.png"
-                alt="BlinkWear Logo"
-                width={36}
-                height={36}
-                className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-lg shadow-2xs group-hover:scale-105 transition-transform"
-                priority
-              />
-              <span className="font-serif text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950 group-hover:text-neutral-800 transition-colors">
-                Blink<span className="text-emerald-600 font-sans">Wear</span><span className="text-emerald-500 font-sans text-lg sm:text-2xl font-bold">.in</span>
-              </span>
-              <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest bg-neutral-900 text-neutral-200 px-1.5 py-0.5 rounded-sm shrink-0">
-                Rental
-              </span>
+              {logoUrl ? (
+                <div className="relative h-8 sm:h-9 max-w-[150px] flex items-center">
+                  <Image
+                    src={logoUrl}
+                    alt="BlinkWear Logo"
+                    width={140}
+                    height={36}
+                    className="h-8 sm:h-9 w-auto object-contain"
+                    priority
+                  />
+                </div>
+              ) : (
+                <>
+                  <Image
+                    src="/icon-96.png"
+                    alt="BlinkWear Logo"
+                    width={36}
+                    height={36}
+                    className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-lg shadow-2xs group-hover:scale-105 transition-transform"
+                    priority
+                  />
+                  <span className="font-serif text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950 group-hover:text-neutral-800 transition-colors">
+                    Blink<span className="text-orange-600 font-sans">Wear</span><span className="text-orange-500 font-sans text-lg sm:text-2xl font-bold">.in</span>
+                  </span>
+                  <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest bg-neutral-900 text-neutral-200 px-1.5 py-0.5 rounded-sm shrink-0">
+                    Rental
+                  </span>
+                </>
+              )}
             </Link>
+
+            {/* City Selector Pill next to search bar on desktop */}
+            <button
+              type="button"
+              onClick={() => setIsCityModalOpen(true)}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-200 hover:border-neutral-300 text-xs font-semibold text-neutral-800 bg-neutral-50 hover:bg-neutral-100 transition-all shrink-0"
+              aria-label="Select delivery city"
+            >
+              <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+              <span>{selectedCity}</span>
+              <ChevronDown className="w-3 h-3 text-neutral-400" />
+            </button>
 
             {/* Search Bar */}
             <form
@@ -351,22 +386,10 @@ export function Header() {
           </div>
         </div>
 
-        {/* Horizontal Category Navigation Bar */}
-        <div className="hidden lg:block border-t border-neutral-100 mt-3 pt-2">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav className="flex items-center justify-between gap-6 overflow-x-auto scrollbar-none py-1 text-xs font-medium text-neutral-600">
-              {categories.map((cat) => (
-                <Link
-                  key={cat.name}
-                  href={cat.href}
-                  className="whitespace-nowrap hover:text-neutral-950 hover:font-semibold transition-all py-1 border-b-2 border-transparent hover:border-neutral-950"
-                >
-                  {cat.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
+        {/* Horizontal Category Navigation Strip */}
+        {categories && categories.length > 0 && (
+          <CategoryIconStrip categories={categories} />
+        )}
       </header>
 
       {/* Mobile Drawer Menu */}
@@ -416,16 +439,19 @@ export function Header() {
               <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
                 Browse Collections
               </p>
-              {categories.map((cat) => (
-                <Link
-                  key={cat.name}
-                  href={cat.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block py-2.5 text-sm font-medium text-neutral-700 hover:text-neutral-950 hover:pl-2 transition-all border-b border-neutral-50"
-                >
-                  {cat.name}
-                </Link>
-              ))}
+              {categories.map((cat) => {
+                const href = 'slug' in cat && cat.slug ? `/category/${cat.slug}` : (cat as any).href || '/products';
+                return (
+                  <Link
+                    key={cat.id || cat.name}
+                    href={href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block py-2.5 text-sm font-medium text-neutral-700 hover:text-neutral-950 hover:pl-2 transition-all border-b border-neutral-50"
+                  >
+                    {cat.name}
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="mt-auto p-4 border-t border-neutral-100 space-y-2 bg-neutral-50">
