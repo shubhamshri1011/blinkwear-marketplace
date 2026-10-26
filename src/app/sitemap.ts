@@ -97,7 +97,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const supabase = await createCatalogClient();
+    const supabase = createCatalogClient();
+    if (!supabase) {
+      return staticRoutes;
+    }
 
     // 1. Fetch active categories from Supabase
     const { data: categories } = await supabase

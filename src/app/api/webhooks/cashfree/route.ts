@@ -82,9 +82,46 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    let payload: any;
+    interface CashfreeRefundData {
+      order_id?: string;
+      refund_status?: string;
+      refund_amount?: number;
+      refund_id?: string;
+      cf_refund_id?: string;
+    }
+
+    interface CashfreeWebhookPayload {
+      type?: string;
+      event?: string;
+      order_id?: string;
+      payment_status?: string;
+      cf_payment_id?: string;
+      refund?: CashfreeRefundData;
+      data?: {
+        order?: {
+          order_id?: string;
+          order_amount?: number;
+          order_currency?: string;
+          order_tags?: {
+            order_type?: string;
+            order_id?: string;
+          };
+        };
+        payment?: {
+          payment_status?: string;
+          payment_amount?: number;
+          payment_currency?: string;
+          cf_payment_id?: string;
+          payment_group?: string;
+          payment_method?: Record<string, unknown>;
+        };
+        refund?: CashfreeRefundData;
+      };
+    }
+
+    let payload: CashfreeWebhookPayload;
     try {
-      payload = JSON.parse(rawBody);
+      payload = JSON.parse(rawBody) as CashfreeWebhookPayload;
     } catch {
       console.warn('[Cashfree Webhook] Signed request had invalid JSON; ignored.');
       return NextResponse.json({ status: 'OK' }, { status: 200 });
@@ -163,7 +200,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (eventType !== 'PAYMENT_SUCCESS_WEBHOOK') {
-      if (['FAILED', 'USER_DROPPED', 'CANCELLED'].includes(paymentStatus)) {
+      if (paymentStatus && ['FAILED', 'USER_DROPPED', 'CANCELLED'].includes(paymentStatus)) {
         const { data: failAttempt, error: lookupError } = await supabase
           .from('payment_attempts')
           .select('id, status')
@@ -267,7 +304,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ status: 'OK' }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[Cashfree Webhook] Request handling failed.', {
       phase: signatureVerified ? 'signed-event-processing' : 'signature-validation',
       errorType: err instanceof Error ? err.name : 'unknown',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthContext';
 import { readGuestCart, saveGuestCart, clearGuestCart } from '@/lib/cart-sync';
@@ -44,7 +44,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const supabase = createClient();
+
+  // Lazy client: only instantiated in browser / client runtime, never during SSR or static prerendering at build
+  const supabase = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return createClient();
+  }, []);
+
+  const getClient = useCallback(() => {
+    return supabase || (typeof window !== 'undefined' ? createClient() : null);
+  }, [supabase]);
 
   const fetchCart = useCallback(async () => {
     if (!user) {
@@ -55,9 +66,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const client = getClient();
+    if (!client) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('cart_items')
         .select(`
           *,
@@ -98,6 +115,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'Please sign in to add items to your bag' };
     }
 
+    const client = getClient();
+    if (!client) {
+      return { success: false, error: 'Service temporarily unavailable' };
+    }
+
     try {
       let product: { id: string; title: string; status: string; listing_type: string; stock_quantity: number | null } | null = null;
 
@@ -111,7 +133,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         };
       } else {
         // Fallback: Check if product exists and is active from database
-        const { data, error: prodErr } = await supabase
+        const { data, error: prodErr } = await client
           .from('products')
           .select('id, title, status, listing_type, stock_quantity')
           .eq('id', params.productId)
@@ -150,7 +172,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           if (product.stock_quantity != null && newQty > product.stock_quantity) {
             return { success: false, error: `Only ${product.stock_quantity} available in stock` };
           }
-          await supabase
+          await client
             .from('cart_items')
             .update({ quantity: newQty, updated_at: new Date().toISOString() })
             .eq('id', existing.id);
@@ -173,7 +195,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         if (existing) {
           // Retain or update existing row
-          await supabase
+          await client
             .from('cart_items')
             .update({
               rental_start_date: params.rentalStartDate ?? existing.rental_start_date,
@@ -186,7 +208,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const { error } = await supabase.from('cart_items').insert({
+      const { error } = await client.from('cart_items').insert({
         user_id: user.id,
         product_id: params.productId,
         purchase_type: params.purchaseType,
@@ -224,8 +246,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const client = getClient();
+    if (!client) return;
+
     try {
-      await supabase.from('cart_items').delete().eq('id', cartItemId);
+      await client.from('cart_items').delete().eq('id', cartItemId);
       await fetchCart();
     } catch (err) {
       console.error('Error removing from cart:', err);
@@ -247,8 +272,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const client = getClient();
+    if (!client) return;
+
     try {
-      await supabase
+      await client
         .from('cart_items')
         .update({ quantity, updated_at: new Date().toISOString() })
         .eq('id', cartItemId);
@@ -265,8 +293,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const client = getClient();
+    if (!client) return;
+
     try {
-      await supabase.from('cart_items').delete().eq('user_id', user.id);
+      await client.from('cart_items').delete().eq('user_id', user.id);
       setCartItems([]);
     } catch (err) {
       console.error('Error clearing cart:', err);

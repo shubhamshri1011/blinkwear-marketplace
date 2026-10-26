@@ -316,7 +316,7 @@ export type SellerProfile = {
   show_reviews?: boolean;
   show_contact?: boolean;
   diwali_theme?: boolean;
-  kyc_docs?: Record<string, any> | null;
+  kyc_docs?: Record<string, unknown> | null;
   is_active: boolean;
   is_verified: boolean;
   verification_status: SellerVerificationStatus;

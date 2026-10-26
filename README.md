@@ -33,12 +33,35 @@ Luxury fashion rental and pre-loved designer marketplace built with Next.js 16 (
 
 ## 🚀 Environment Configuration
 
-Create a `.env.local` file in the root directory:
+### Required Variables for Vercel (Production, Preview, and Development)
+
+When deploying to Vercel, navigate to **Project Settings → Environment Variables** and ensure each of the following variables is added and enabled for all three environments (**Production**, **Preview**, and **Development**):
+
+| Variable | Description | Scope / Visibility |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (`https://<project-ref>.supabase.co`) | Client & Server (Production, Preview, Dev) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous / public API key (JWT starting with `eyJ...`) | Client & Server (Production, Preview, Dev) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical public URL (e.g. `https://blinkwear.in`) | Client & Server |
+| `NEXT_PUBLIC_CASHFREE_ENV` | Cashfree environment mode (`production` or `sandbox`) | Client & Server |
+| `CF_APP_ID` | Cashfree Merchant Application ID | Server only |
+| `CF_SECRET_KEY` | Cashfree Merchant Secret Key | Server only |
+| `CF_ENV` | Cashfree Server SDK Environment (`production` or `sandbox`) | Server only |
+
+> [!IMPORTANT]
+> **Vercel Preview Deployments**: Ensure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` have the **Preview** checkbox ticked. If preview builds fail with missing environment variable errors, verify that the variables are scoped to Preview deployments as well as Production.
+
+### Local Development (`.env.local`)
+
+Create a `.env.local` file in `marketplace-web/` (this file is `.gitignore`d and must never contain committed production secrets):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://xdxvingqvhyjmupvvxjo.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_SITE_URL=https://blinkwear.in
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_CASHFREE_ENV=sandbox
+CF_APP_ID=<your-test-app-id>
+CF_SECRET_KEY=<your-test-secret-key>
+CF_ENV=sandbox
 ```
 
 ---

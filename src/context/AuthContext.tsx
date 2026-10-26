@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { clearClientAuthCookies } from '@/lib/supabase/cookie-options';
 import type { User } from '@supabase/supabase-js';
@@ -30,9 +30,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const supabase = createClient();
+  // Lazy client: only instantiated in browser / client runtime, never during SSR or static prerendering at build
+  const supabase = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return createClient();
+  }, []);
 
-  const fetchUserData = async (currentUser: User | null) => {
+  const fetchUserData = async (
+    currentUser: User | null,
+    clientOverride?: ReturnType<typeof createClient>
+  ) => {
     if (!currentUser) {
       setProfile(null);
       setSellerProfile(null);
@@ -40,8 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const client = clientOverride || supabase || (typeof window !== 'undefined' ? createClient() : null);
+    if (!client) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { data: prof, error: profError } = await supabase
+      const { data: prof, error: profError } = await client
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
@@ -51,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(prof as Profile);
 
         if (prof.is_seller) {
-          const { data: sellerProf } = await supabase
+          const { data: sellerProf } = await client
             .from('seller_profiles')
             .select('*')
             .eq('id', currentUser.id)
@@ -70,29 +85,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    const client = supabase || createClient();
+    if (!client) {
+      setIsLoading(false);
+      return;
+    }
+
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await client.auth.getSession();
       setUser(session?.user ?? null);
-      await fetchUserData(session?.user ?? null);
+      await fetchUserData(session?.user ?? null, client);
     };
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = client.auth.onAuthStateChange(
       async (_event, session) => {
         setUser(session?.user ?? null);
-        await fetchUserData(session?.user ?? null);
+        await fetchUserData(session?.user ?? null, client);
       }
     );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   const refreshProfile = async () => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    await fetchUserData(currentUser);
+    const client = supabase || (typeof window !== 'undefined' ? createClient() : null);
+    if (!client) return;
+    const { data: { user: currentUser } } = await client.auth.getUser();
+    await fetchUserData(currentUser, client);
   };
 
   const signOut = async () => {
@@ -100,7 +123,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 1. Clear session cookies both with domain and host-only
       clearClientAuthCookies();
       // 2. Terminate Supabase session
-      await supabase.auth.signOut();
+      const client = supabase || (typeof window !== 'undefined' ? createClient() : null);
+      if (client) {
+        await client.auth.signOut();
+      }
     } catch (err) {
       console.error('Error during signOut:', err);
     } finally {
