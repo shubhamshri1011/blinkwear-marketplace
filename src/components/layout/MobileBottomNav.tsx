@@ -54,9 +54,12 @@ export function MobileBottomNav() {
     },
     {
       label: user ? 'Account' : 'Login',
-      href: user ? '/account' : '/login',
+      href: user ? '/profile' : '/login',
       icon: User,
-      isActive: pathname.startsWith('/account') || pathname.startsWith('/login'),
+      isActive:
+        pathname.startsWith('/profile') ||
+        pathname.startsWith('/account') ||
+        pathname.startsWith('/login'),
     },
   ];
 

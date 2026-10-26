@@ -70,6 +70,25 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/product/:id',
+        destination: '/products/:id',
+        permanent: true,
+      },
+      {
+        source: '/account',
+        destination: '/profile',
+        permanent: false,
+      },
+      {
+        source: '/category',
+        destination: '/categories',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,13 +1,13 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductsFilter } from '@/components/product/ProductsFilter';
 import { JsonLd } from '@/components/seo/JsonLd';
 import type { Category, ProductWithImages } from '@/types/database';
-import { Sparkles, SlidersHorizontal, ChevronRight, Home } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, ChevronRight, Home, LayoutGrid } from 'lucide-react';
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -23,36 +23,52 @@ interface CategoryPageProps {
 
 export const revalidate = 60;
 
+const SLUG_ALIASES: Record<string, string> = {
+  all: '/products',
+  lehenga: '/category/lehengas',
+  saree: '/category/sarees',
+  dress: '/category/dresses',
+  gown: '/category/dresses',
+  gowns: '/category/dresses',
+  kurtas: '/category/kurta',
+  kurti: '/category/kurta',
+  kurtis: '/category/kurta',
+  earrings: '/category/earings',
+  earring: '/category/earings',
+  slippers: '/category/sleeper',
+  shoes: '/category/footwear',
+};
+
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const lowerSlug = slug.toLowerCase();
+
   const supabase = await createClient();
 
-  const { data: category } = await supabase
+  const { data: dbCat } = await supabase
     .from('categories')
     .select('name, slug')
-    .eq('slug', slug)
+    .eq('slug', lowerSlug)
     .single();
 
-  if (!category) {
-    return {
-      title: 'Category Not Found | BlinkWear',
-    };
-  }
+  const categoryName = dbCat?.name || lowerSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const isLehenga = lowerSlug === 'lehengas' || lowerSlug === 'lehenga';
 
-  const isLehenga = slug === 'lehengas' || slug === 'lehenga';
   const title = isLehenga
-    ? 'Rental Lehenga Bhopal | Rent Designer Bridal & Party Lehengas — BlinkWear'
-    : `Rent ${category.name} in Bhopal | Designer ${category.name} on Rent — BlinkWear`;
+    ? 'Rental Lehenga Pune & Bhopal | Rent Designer Bridal & Party Lehengas — BlinkWear'
+    : `Rent ${categoryName} in Pune & Bhopal | Designer Fashion on Rent — BlinkWear`;
 
   const description = isLehenga
-    ? 'Rent authentic designer bridal lehengas, party wear and Navratri cholis in Bhopal on BlinkWear.in. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.'
-    : `Rent authentic designer ${category.name.toLowerCase()} in Bhopal, Pune, and across India on BlinkWear.in. 100% sanitized, doorstep delivery & reverse pickup.`;
+    ? 'Rent authentic designer bridal lehengas, sangeet cholis & party wear in Pune and Bhopal on BlinkWear.in. 100% sanitized, doorstep delivery & free return pickup. From ₹499/day.'
+    : `Rent authentic designer ${categoryName.toLowerCase()} in Pune and Bhopal on BlinkWear.in. 100% sanitized, doorstep delivery & reverse return pickup.`;
 
   const keywords = [
-    `rental ${category.name.toLowerCase()}`,
-    `${category.name.toLowerCase()} on rent`,
-    `${category.name.toLowerCase()} rental Bhopal`,
+    `rental ${categoryName.toLowerCase()}`,
+    `${categoryName.toLowerCase()} on rent`,
+    `${categoryName.toLowerCase()} rental Pune`,
+    `${categoryName.toLowerCase()} rental Bhopal`,
     'rental lehenga Bhopal',
+    'rental lehenga Pune',
     'lehenga on rent',
     'BlinkWear',
     'Blink Wear',
@@ -73,7 +89,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       description,
       url: `https://blinkwear.in/category/${slug}`,
       type: 'website',
-      images: [{ url: '/icon.png', width: 512, height: 512, alt: `${category.name} Rental BlinkWear` }],
+      images: [{ url: '/icon.png', width: 512, height: 512, alt: `${categoryName} Rental BlinkWear` }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -86,25 +102,39 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = await params;
+  const lowerSlug = slug.toLowerCase();
+
+  // Handle known aliases and redirects
+  if (SLUG_ALIASES[lowerSlug]) {
+    redirect(SLUG_ALIASES[lowerSlug]);
+  }
+
   const resolvedParams = await searchParams;
   const supabase = await createClient();
 
-  // Fetch target category
-  const { data: category } = await supabase
+  // Fetch target category from DB
+  const { data: dbCategory } = await supabase
     .from('categories')
-    .select('*')
-    .eq('slug', slug)
+    .select('id, name, slug, parent_id, icon_url, sort_order, is_active, created_at')
+    .eq('slug', lowerSlug)
     .single();
 
-  if (!category) {
-    // If not found in DB directly, let's check subcategories or handle gracefully
-    notFound();
-  }
+  // Fallback category object for unseeded categories (e.g. sherwanis, party-wear)
+  const category: Category = dbCategory || {
+    id: `virtual-${lowerSlug}`,
+    name: lowerSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    slug: lowerSlug,
+    parent_id: null,
+    icon_url: null,
+    sort_order: 99,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  };
 
   // Fetch all active categories for filter
   const { data: allCategories } = await supabase
     .from('categories')
-    .select('*')
+    .select('id, name, slug, parent_id, icon_url, sort_order, is_active, created_at')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
 
@@ -118,9 +148,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     ? citiesData.map((c) => c.name)
     : ['Bhopal', 'Pune'];
 
-  // Fetch subcategories of this category
-  const subcategories = (allCategories || []).filter((c) => c.parent_id === category.id);
-  const targetCategoryIds = [category.id, ...subcategories.map((s) => s.id)];
+  // Fetch subcategories of this category if present
+  const subcategories = dbCategory
+    ? (allCategories || []).filter((c) => c.parent_id === category.id)
+    : [];
+  const targetCategoryIds = dbCategory ? [category.id, ...subcategories.map((s) => s.id)] : [];
 
   // Query products
   let query = supabase
@@ -134,8 +166,16 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       product_images (*),
       category:categories!products_category_id_fkey (id, name, slug)
     `)
-    .eq('status', 'active')
-    .in('category_id', targetCategoryIds);
+    .eq('status', 'active');
+
+  if (targetCategoryIds.length > 0) {
+    query = query.in('category_id', targetCategoryIds);
+  } else {
+    const searchToken = lowerSlug.replace(/[-_]+/g, '%');
+    query = query.or(
+      `title.ilike.%${searchToken}%,description.ilike.%${searchToken}%,brand.ilike.%${searchToken}%`
+    );
+  }
 
   if (resolvedParams.type === 'rent') {
     query = query.in('listing_type', ['rent', 'both']);

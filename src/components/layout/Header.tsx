@@ -440,7 +440,7 @@ export function Header({ logoUrl, categories: propCategories = [] }: HeaderProps
                 Browse Collections
               </p>
               {categories.map((cat) => {
-                const href = 'slug' in cat && cat.slug ? `/category/${cat.slug}` : (cat as any).href || '/products';
+                const href = (cat as any).href || (cat.slug === 'all' ? '/products' : `/category/${cat.slug}`);
                 return (
                   <Link
                     key={cat.id || cat.name}
@@ -452,6 +452,13 @@ export function Header({ logoUrl, categories: propCategories = [] }: HeaderProps
                   </Link>
                 );
               })}
+              <Link
+                href="/categories"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block py-2.5 text-sm font-semibold text-orange-600 hover:text-orange-700 hover:pl-2 transition-all border-b border-neutral-50"
+              >
+                Explore All Categories →
+              </Link>
             </div>
 
             <div className="mt-auto p-4 border-t border-neutral-100 space-y-2 bg-neutral-50">

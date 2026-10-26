@@ -139,14 +139,33 @@ export default async function RootLayout({
   let categories: Category[] = [];
   if (catalogClient) {
     try {
-      const { data } = await catalogClient
+      const { data, error } = await catalogClient
         .from('categories')
-        .select('id, name, slug, parent_id, icon_url, sort_order, is_active, show_in_strip, created_at')
+        .select('id, name, slug, parent_id, icon_url, sort_order, is_active, created_at')
         .eq('is_active', true)
-        .is('parent_id', null)
         .order('sort_order', { ascending: true });
-      if (data) {
-        categories = data as Category[];
+      if (!error && data) {
+        const prioritySlugs = [
+          'lehengas',
+          'sarees',
+          'dresses',
+          'ethnic-wear',
+          'western-wear',
+          'men',
+          'kids',
+          'accessories',
+          'footwear',
+          'kurta',
+        ];
+        const rawList = data as Category[];
+        categories = rawList.slice().sort((a, b) => {
+          const idxA = prioritySlugs.indexOf(a.slug);
+          const idxB = prioritySlugs.indexOf(b.slug);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return a.sort_order - b.sort_order;
+        });
       }
     } catch {
       categories = [];

@@ -94,27 +94,67 @@ async function getHomepageData() {
   // 1. Fetch site theme settings
   const themeSettings = await getSiteThemeSettings();
 
-  // 2. Fetch active buyer banners using CANONICAL columns only (start_date, end_date, cta_label)
-  const { data: rawBanners } = await supabase
-    .from('banners')
-    .select('id, title, subtitle, cta_label, image_url, mobile_image_url, alt_text, placement, panel, target_type, target_value, display_order, is_active, start_date, end_date, created_at, updated_at')
-    .eq('panel', 'buyer')
-    .eq('is_active', true)
-    .or(`start_date.is.null,start_date.lte.${now}`)
-    .or(`end_date.is.null,end_date.gte.${now}`)
-    .order('display_order', { ascending: true });
+  // 2. Fetch active buyer banners safely (canonical columns compatible with existing production schema)
+  let banners: Banner[] = [];
+  try {
+    const { data: rawBanners, error: bError } = await supabase
+      .from('banners')
+      .select('id, title, subtitle, cta_label, image_url, panel, target_type, target_value, display_order, is_active, start_date, end_date, created_at, updated_at')
+      .eq('panel', 'buyer')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
 
-  const banners = (rawBanners || []) as Banner[];
+    if (!bError && rawBanners) {
+      const nowMs = Date.now();
+      banners = (rawBanners as Banner[]).filter((b) => {
+        if (b.start_date && new Date(b.start_date).getTime() > nowMs) return false;
+        if (b.end_date && new Date(b.end_date).getTime() < nowMs) return false;
+        return true;
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching banners:', err);
+    banners = [];
+  }
 
-  // 3. Fetch active root categories for strip & grid
-  const { data: rawCategories } = await supabase
-    .from('categories')
-    .select('id, name, slug, parent_id, icon_url, sort_order, is_active, show_in_strip, created_at')
-    .eq('is_active', true)
-    .is('parent_id', null)
-    .order('sort_order', { ascending: true });
+  // 3. Fetch active categories for strip & grid (safe existing columns)
+  let categories: Category[] = [];
+  try {
+    const { data: rawCategories, error: cError } = await supabase
+      .from('categories')
+      .select('id, name, slug, parent_id, icon_url, sort_order, is_active, created_at')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
-  const categories = (rawCategories || []) as Category[];
+    if (!cError && rawCategories) {
+      // Prioritize top customer-facing rental categories for the strip:
+      // Lehengas, Sarees, Dresses, Ethnic Wear, Western Wear, Men, Kids, Accessories, Footwear
+      const prioritySlugs = [
+        'lehengas',
+        'sarees',
+        'dresses',
+        'ethnic-wear',
+        'western-wear',
+        'men',
+        'kids',
+        'accessories',
+        'footwear',
+        'kurta',
+      ];
+      const rawList = rawCategories as Category[];
+      categories = rawList.slice().sort((a, b) => {
+        const idxA = prioritySlugs.indexOf(a.slug);
+        const idxB = prioritySlugs.indexOf(b.slug);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.sort_order - b.sort_order;
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching categories:', err);
+    categories = [];
+  }
 
   // 4. Try fetching modern homepage_blocks (Phase 42 engine)
   let blocksWithData: BlockWithProducts[] = [];
@@ -332,6 +372,18 @@ export default async function HomePage() {
       addressRegion: 'Maharashtra & Madhya Pradesh',
       addressCountry: 'IN',
     },
+    geo: [
+      {
+        '@type': 'GeoCoordinates',
+        latitude: 18.5204,
+        longitude: 73.8567,
+      },
+      {
+        '@type': 'GeoCoordinates',
+        latitude: 23.2599,
+        longitude: 77.4126,
+      },
+    ],
     areaServed: [
       {
         '@type': 'City',
@@ -346,10 +398,67 @@ export default async function HomePage() {
     ],
   };
 
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': 'https://www.blinkwear.in/#website',
+    name: 'BlinkWear',
+    url: 'https://blinkwear.in',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://blinkwear.in/search?q={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
+  const aeoFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Can I rent designer bridal lehengas and sherwanis in Pune and Bhopal?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes! BlinkWear provides verified fashion rentals in Pune and Bhopal. You can rent authentic designer bridal lehengas, groom sherwanis, tuxedos, gowns, and ethnic party wear with doorstep delivery and reverse pickup.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Are rented garments sanitized and clean on BlinkWear?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Every outfit on BlinkWear undergoes a 100% multi-stage sanitization, professional dry cleaning, and strict quality verification before being delivered in sealed garment packaging.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How does delivery, return, and security deposit work on BlinkWear?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'BlinkWear delivers your outfit right to your doorstep before your event date. Once your rental duration concludes, a free return pickup is scheduled. Your security deposit is promptly refunded back to your source payment method following return inspection.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Which areas in Pune and Bhopal does BlinkWear service?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'In Pune, BlinkWear delivers across Kothrud, Baner, Wakad, Hinjewadi, Viman Nagar, Koregaon Park, Aundh, Kalyani Nagar, Hadapsar, and Pimpri-Chinchwad. In Bhopal, service covers MP Nagar, Arera Colony, Kolar Road, Shahpura, TT Nagar, Hoshangabad Road, and surrounding neighborhoods.',
+        },
+      },
+    ],
+  };
+
   return (
     <>
       <JsonLd data={organizationSchema} />
       <JsonLd data={localBusinessSchema} />
+      <JsonLd data={websiteSchema} />
+      <JsonLd data={aeoFaqSchema} />
 
       <HomeFeedClient
         themeSettings={themeSettings}

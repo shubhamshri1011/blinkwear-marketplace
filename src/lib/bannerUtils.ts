@@ -6,14 +6,20 @@ export function resolveBannerHref(banner: {
   target_type?: string | null;
   target_value?: string | null;
 }): string {
-  const val = (banner.target_value || '').trim();
+  const rawVal = (banner.target_value || '').trim();
 
   // If no target value or target_type is none/unset, default to rentals catalog
-  if (!val || banner.target_type === 'none') {
+  if (!rawVal || banner.target_type === 'none') {
     return '/products?type=rent';
   }
 
-  // 1. If target_value is an absolute HTTP/HTTPS URL, return it directly
+  // Strip internal domain if present so Next.js handles client-side routing
+  let val = rawVal.replace(/^https?:\/\/(www\.)?blinkwear\.in/i, '');
+  if (!val) {
+    return '/';
+  }
+
+  // 1. If target_value is still an external absolute HTTP/HTTPS URL, return it directly
   if (/^https?:\/\//i.test(val)) {
     return val;
   }
