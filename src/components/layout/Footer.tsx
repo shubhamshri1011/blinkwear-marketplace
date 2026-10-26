@@ -203,7 +203,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/founder/shubham-shrivastava" className="hover:text-emerald-400 transition-colors">
-                  Meet Our Founder
+                  Meet Our Founder (Shubham Shrivastava)
                 </Link>
               </li>
             </ul>

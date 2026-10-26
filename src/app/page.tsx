@@ -527,43 +527,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 6. Meet Our Founder Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 rounded-3xl p-8 sm:p-14 border border-neutral-800 shadow-2xl relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-8">
-            <div
-              aria-label="Shubham Shrivastava, Founder of BlinkWear.in"
-              className="shrink-0 w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-700/30 border border-emerald-500/30 flex items-center justify-center text-emerald-400"
-            >
-              <Sparkles className="w-10 h-10 opacity-60" aria-hidden="true" />
-            </div>
-            <div className="flex-1 space-y-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
-                Meet Our Founder
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                Shubham Shrivastava
-              </h2>
-              <p className="text-emerald-400 font-semibold text-sm">
-                Founder, BlinkWear.in
-              </p>
-              <p className="text-neutral-400 text-sm leading-relaxed max-w-xl">
-                Shubham Shrivastava founded BlinkWear.in to build a technology-driven fashion
-                marketplace where customers can rent or buy premium occasionwear and clothing owners
-                can reach more customers through a digital platform.
-              </p>
-              <Link
-                href="/founder/shubham-shrivastava"
-                className="inline-flex items-center gap-2 mt-1 px-5 py-2.5 rounded-full bg-emerald-500 text-neutral-950 font-bold text-sm hover:bg-emerald-400 transition-all shadow-md"
-              >
-                View Founder Profile
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 7. Hygiene & Sanitization Guarantee Section */}
       <section className="bg-neutral-50 py-16 border-y border-neutral-200">
