@@ -269,6 +269,7 @@ export type RentalBookingWithDetails = RentalBooking & {
 export type BannerPanel = 'buyer';
 export type BannerTargetType = 'product' | 'category' | 'subcategory' | 'url' | 'none';
 export type BannerPlacement = 'hero_carousel' | 'top_strip' | 'mid_tiles' | 'category_banner';
+export type BannerMediaType = 'image' | 'video';
 
 export type Banner = {
   id: string;
@@ -277,6 +278,9 @@ export type Banner = {
   cta_label: string | null;
   image_url: string;
   mobile_image_url?: string | null;
+  media_type?: BannerMediaType;
+  video_url?: string | null;
+  mobile_video_url?: string | null;
   alt_text?: string | null;
   placement?: BannerPlacement;
   panel: BannerPanel;

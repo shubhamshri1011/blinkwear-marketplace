@@ -94,15 +94,27 @@ async function getHomepageData() {
   // 1. Fetch site theme settings
   const themeSettings = await getSiteThemeSettings();
 
-  // 2. Fetch active buyer banners safely (canonical columns compatible with existing production schema)
+  // 2. Fetch active buyer banners safely (with multi-format video/photo & placement support)
   let banners: Banner[] = [];
   try {
-    const { data: rawBanners, error: bError } = await supabase
+    let { data: rawBanners, error: bError } = await supabase
       .from('banners')
-      .select('id, title, subtitle, cta_label, image_url, panel, target_type, target_value, display_order, is_active, start_date, end_date, created_at, updated_at')
+      .select('id, title, subtitle, cta_label, image_url, mobile_image_url, media_type, video_url, mobile_video_url, placement, alt_text, panel, target_type, target_value, display_order, is_active, start_date, end_date, created_at, updated_at')
       .eq('panel', 'buyer')
       .eq('is_active', true)
       .order('display_order', { ascending: true });
+
+    // Fallback to baseline columns if extended columns (placement, video_url) are not yet migrated
+    if (bError) {
+      const fallback = await supabase
+        .from('banners')
+        .select('id, title, subtitle, cta_label, image_url, panel, target_type, target_value, display_order, is_active, start_date, end_date, created_at, updated_at')
+        .eq('panel', 'buyer')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      rawBanners = fallback.data as any;
+      bError = fallback.error;
+    }
 
     if (!bError && rawBanners) {
       const nowMs = Date.now();

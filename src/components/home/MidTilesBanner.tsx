@@ -30,13 +30,26 @@ export function MidTilesBanner({ banners }: MidTilesBannerProps) {
               href={href}
               className="group relative block aspect-[2/1] sm:aspect-[2.4/1] rounded-2xl overflow-hidden border border-neutral-200/80 bg-neutral-900 shadow-2xs hover:shadow-md transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             >
-              <Image
-                src={banner.image_url}
-                alt={banner.alt_text || banner.title || 'Promotional Tile'}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
-              />
+              {banner.media_type === 'video' || banner.video_url ? (
+                <video
+                  src={banner.video_url || undefined}
+                  poster={banner.image_url || undefined}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                />
+              ) : (
+                <Image
+                  src={banner.image_url}
+                  alt={banner.alt_text || banner.title || 'Promotional Tile'}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent flex flex-col justify-end p-4 sm:p-5 text-white">
                 {banner.title && (
                   <h3 className="font-serif text-base sm:text-lg font-bold leading-tight drop-shadow-sm">

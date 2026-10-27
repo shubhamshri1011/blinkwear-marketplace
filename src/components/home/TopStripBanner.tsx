@@ -23,7 +23,18 @@ export function TopStripBanner({ banners }: TopStripBannerProps) {
         href={href}
         className="block relative w-full h-10 sm:h-12 group focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
       >
-        {banner.image_url ? (
+        {banner.media_type === 'video' || banner.video_url ? (
+          <video
+            src={banner.video_url || undefined}
+            poster={banner.image_url || undefined}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover object-center group-hover:opacity-90 transition-opacity"
+          />
+        ) : banner.image_url ? (
           <Image
             src={banner.image_url}
             alt={banner.alt_text || banner.title || 'Special Announcement'}

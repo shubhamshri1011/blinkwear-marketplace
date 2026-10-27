@@ -145,31 +145,66 @@ export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
                 tabIndex={isActive ? 0 : -1}
                 className="block relative w-full h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500"
               >
-                {/* Mobile Art Direction Image (16:9, rendered < 768px) */}
-                <div className="block md:hidden relative w-full h-full">
-                  <Image
-                    src={banner.mobile_image_url || banner.image_url}
-                    alt={banner.alt_text || banner.title || 'BlinkWear Promotional Banner'}
-                    fill
-                    priority={index === 0}
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    sizes="(max-width: 768px) 100vw, 1280px"
-                    className="object-cover object-center"
-                  />
-                </div>
+                {/* Banner Media: Video or Photo */}
+                {banner.media_type === 'video' || banner.video_url ? (
+                  <>
+                    {/* Mobile Art Direction Video (16:9, rendered < 768px) */}
+                    <div className="block md:hidden relative w-full h-full overflow-hidden">
+                      <video
+                        src={banner.mobile_video_url || banner.video_url || undefined}
+                        poster={banner.mobile_image_url || banner.image_url || undefined}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload={index === 0 ? 'auto' : 'metadata'}
+                        className="w-full h-full object-cover object-center"
+                      />
+                    </div>
 
-                {/* Desktop Art Direction Image (3.2:1, rendered >= 768px) */}
-                <div className="hidden md:block relative w-full h-full">
-                  <Image
-                    src={banner.image_url}
-                    alt={banner.alt_text || banner.title || 'BlinkWear Promotional Banner'}
-                    fill
-                    priority={index === 0}
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    sizes="100vw"
-                    className="object-cover object-center"
-                  />
-                </div>
+                    {/* Desktop Art Direction Video (3.2:1, rendered >= 768px) */}
+                    <div className="hidden md:block relative w-full h-full overflow-hidden">
+                      <video
+                        src={banner.video_url || undefined}
+                        poster={banner.image_url || undefined}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload={index === 0 ? 'auto' : 'metadata'}
+                        className="w-full h-full object-cover object-center"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Mobile Art Direction Image (16:9, rendered < 768px) */}
+                    <div className="block md:hidden relative w-full h-full">
+                      <Image
+                        src={banner.mobile_image_url || banner.image_url}
+                        alt={banner.alt_text || banner.title || 'BlinkWear Promotional Banner'}
+                        fill
+                        priority={index === 0}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        sizes="(max-width: 768px) 100vw, 1280px"
+                        className="object-cover object-center"
+                      />
+                    </div>
+
+                    {/* Desktop Art Direction Image (3.2:1, rendered >= 768px) */}
+                    <div className="hidden md:block relative w-full h-full">
+                      <Image
+                        src={banner.image_url}
+                        alt={banner.alt_text || banner.title || 'BlinkWear Promotional Banner'}
+                        fill
+                        priority={index === 0}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        sizes="100vw"
+                        className="object-cover object-center"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Subtle dark gradient overlay for text readability */}
                 {(banner.title || banner.subtitle) && (
