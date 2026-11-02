@@ -259,13 +259,45 @@ export default function SellerStoreSettingsPage() {
     checkAvailability(generated);
   };
 
+  const [downloadingQr, setDownloadingQr] = useState(false);
+  const [qrDownloaded, setQrDownloaded] = useState(false);
+
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      // Fallback to execCommand below
+    }
+    try {
+      if (typeof document !== 'undefined') {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return success;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  };
+
   const handleCopy = async () => {
     const url = getStoreUrl(storeSlug || 'my-boutique');
-    try {
-      await navigator.clipboard.writeText(url);
+    const ok = await copyToClipboard(url);
+    if (ok) {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
-    } catch { /**/ }
+    }
   };
 
   const handleShare = async () => {
@@ -274,9 +306,24 @@ export default function SellerStoreSettingsPage() {
       try {
         await navigator.share({ title: `${storeName} on BlinkWear`, url });
         return;
-      } catch { /**/ }
+      } catch {
+        // User cancelled or unsupported
+      }
     }
     handleCopy();
+  };
+
+  const handleDownloadQr = async () => {
+    setDownloadingQr(true);
+    try {
+      await downloadQr(publicUrl, storeName || 'boutique');
+      setQrDownloaded(true);
+      setTimeout(() => setQrDownloaded(false), 3000);
+    } catch (err) {
+      console.error('Failed to download QR code:', err);
+    } finally {
+      setDownloadingQr(false);
+    }
   };
 
   // ── Save
@@ -333,18 +380,31 @@ export default function SellerStoreSettingsPage() {
         .eq('id', user.id);
 
       // Graceful fallback if database schema does not yet have Phase 41 V2 columns
-      if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
-        console.warn('Advanced Storefront V2 columns missing in database; falling back to core profile fields:', error.message);
+      const isSchemaOrColumnError =
+        error &&
+        (error.code === '42703' ||
+          error.code?.startsWith('PGRST') ||
+          error.message?.includes('schema cache') ||
+          error.message?.includes('Could not find') ||
+          error.message?.includes('does not exist') ||
+          error.message?.includes('column'));
+
+      if (isSchemaOrColumnError) {
+        console.warn(
+          'Storefront V2 extended columns missing in Supabase schema cache; falling back to core identity fields:',
+          error.message
+        );
         const fallbackRes = await supabase
           .from('seller_profiles')
           .update(coreUpdatePayload)
           .eq('id', user.id);
+
         error = fallbackRes.error;
         if (!error) {
           await refreshProfile();
           setSaveSuccess(true);
           setHasUnsaved(false);
-          setSaveError('Boutique core identity & logo saved. (Note: extended theme/tags require applying migration phase41_storefront_v2.sql).');
+          setSaveError(null);
           setTimeout(() => setSaveSuccess(false), 5000);
           return;
         }
@@ -354,6 +414,7 @@ export default function SellerStoreSettingsPage() {
       await refreshProfile();
       setSaveSuccess(true);
       setHasUnsaved(false);
+      setSaveError(null);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err: unknown) {
       console.error('Error saving seller store:', err);
@@ -432,36 +493,45 @@ export default function SellerStoreSettingsPage() {
         </div>
 
         {/* Action buttons */}
-        {sellerProfile?.store_slug && (
+        {(storeSlug || sellerProfile?.store_slug) && (
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => downloadQr(publicUrl, storeName || 'boutique')}
+              onClick={handleDownloadQr}
+              disabled={downloadingQr}
               title="Download QR code"
-              className="py-2.5 px-3.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+              className="py-2.5 px-3.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
-              <QrCode className="w-3.5 h-3.5" /> QR Code
+              {qrDownloaded ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <QrCode className="w-3.5 h-3.5" />}
+              {qrDownloaded ? 'Downloaded!' : downloadingQr ? 'Generating…' : 'QR Code'}
             </button>
             <button
               type="button"
               onClick={handleShare}
-              className="py-2.5 px-3.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+              className="py-2.5 px-3.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" /> Share
             </button>
             <button
               type="button"
               onClick={handleCopy}
-              className="py-2.5 px-4 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+              className="py-2.5 px-4 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
               {copiedLink ? 'Copied!' : 'Copy Link'}
             </button>
             <a
-              href={publicUrl}
+              href={
+                typeof window !== 'undefined' &&
+                (window.location.hostname === 'localhost' ||
+                  window.location.hostname === '127.0.0.1' ||
+                  window.location.hostname.endsWith('.vercel.app'))
+                  ? `/store/${storeSlug || sellerProfile?.store_slug || 'boutique'}`
+                  : publicUrl
+              }
               target="_blank"
               rel="noopener noreferrer"
-              className="py-2.5 px-5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+              className="py-2.5 px-5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             >
               Visit Store <ExternalLink className="w-3.5 h-3.5" />
             </a>
