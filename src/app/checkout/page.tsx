@@ -472,7 +472,7 @@ function CheckoutContent() {
       <div className="pb-6 border-b border-neutral-100 mb-8">
         <h1 className="font-serif text-3xl font-bold text-neutral-900">Secure Checkout</h1>
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-          100% Prepaid via Cashfree Payments • Guaranteed Sanitization & Doorstep Delivery
+          100% Secure Prepaid Payment • Guaranteed Sanitization & Doorstep Delivery
         </p>
 
         <div className="flex flex-wrap items-center gap-2 pt-3">
@@ -732,11 +732,11 @@ function CheckoutContent() {
             <div className="p-4 rounded-2xl border border-emerald-600 bg-emerald-50/40 text-xs shadow-xs flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
-                  Cashfree
+                  Online
                 </div>
                 <div>
                   <span className="font-bold text-neutral-900 text-sm block">
-                    Cashfree Payments (Prepaid Only)
+                    Online Payment (Prepaid Only)
                   </span>
                   <span className="text-neutral-500 text-xs mt-0.5 block">
                     Fast & secure via UPI (GPay, PhonePe, Paytm), Debit/Credit Cards, Net Banking
@@ -753,7 +753,7 @@ function CheckoutContent() {
                 🛡️ 100% Prepaid Policy — Cash on Delivery is not available.
               </p>
               <p className="leading-relaxed">
-                All rental bookings and purchases must be confirmed via Cashfree prior to dispatch. Security deposits are tracked separately and refunded following post-rental garment inspection.
+                All rental bookings and purchases must be confirmed via secure payment prior to dispatch. Security deposits are tracked separately and refunded following post-rental garment inspection.
               </p>
             </div>
           </div>
@@ -947,12 +947,12 @@ function CheckoutContent() {
             >
               {isProcessing
                 ? 'Securing Payment Session...'
-                : `Pay ${formatCurrency(grandTotal)} via Cashfree (Prepaid)`}
+                : `Pay ${formatCurrency(grandTotal)} Securely`}
             </button>
 
             <div className="text-[11px] text-neutral-400 text-center flex items-center justify-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              Cashfree 256-bit SSL Encrypted • Instant Verification
+              256-bit SSL Encrypted • Instant Verification
             </div>
           </div>
         </div>

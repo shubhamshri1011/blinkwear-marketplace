@@ -74,7 +74,7 @@ export default function CartPage() {
       <div className="pb-6 border-b border-neutral-100 mb-8">
         <h1 className="font-serif text-3xl font-bold text-neutral-900">Shopping Bag</h1>
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-          Review your selected rentals and purchases before proceeding to secure Cashfree checkout.
+          Review your selected rentals and purchases before proceeding to secure checkout.
         </p>
 
         <div className="flex flex-wrap items-center gap-2 pt-3">

@@ -75,7 +75,7 @@ export default function CancellationPolicyPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-neutral-900">Refund Processing Timeline</h2>
           <p>
-            Approved cancellation refunds are processed back to your original payment method (Cashfree UPI / Net Banking / Card) within 3 to 5 business days.
+            Approved cancellation refunds are processed back to your original payment method (UPI / Net Banking / Card) within 3 to 5 business days.
           </p>
         </section>
       </div>

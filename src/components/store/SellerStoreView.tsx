@@ -78,7 +78,7 @@ function ProductSkeleton() {
 // ─── How-It-Works steps ───────────────────────────────────────────────────────
 const HOW_STEPS = [
   { icon: Search, label: 'Browse', desc: 'Find the perfect outfit from this boutique' },
-  { icon: ShoppingBag, label: 'Book', desc: 'Choose your rental dates and checkout via Cashfree' },
+  { icon: ShoppingBag, label: 'Book', desc: 'Choose your rental dates and checkout securely online' },
   { icon: Truck, label: 'Delivered', desc: 'Doorstep delivery, sanitized & steam-pressed' },
   { icon: Heart, label: 'Wear', desc: 'Make an unforgettable entrance at your event' },
   { icon: RotateCcw, label: 'Return', desc: 'Free doorstep reverse pickup by our courier' },
@@ -838,7 +838,7 @@ function HowItWorksSection({ pal }: { pal: ReturnType<typeof usePalette> }) {
         {/* Trust pills */}
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           {[
-            { icon: ShieldCheck, label: 'Cashfree Secured Payments' },
+            { icon: ShieldCheck, label: '100% Secured Payments' },
             { icon: Sparkles, label: 'Sanitized & Steam Pressed' },
             { icon: Truck, label: 'Doorstep Delivery' },
             { icon: RotateCcw, label: 'Free Reverse Pickup' },

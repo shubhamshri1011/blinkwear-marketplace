@@ -38,7 +38,7 @@ export default function RefundPolicyPage() {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-neutral-900">2. Refund Timeline</h2>
           <p>
-            Upon our logistics courier collecting the garment from your doorstep, it is delivered to our regional hub for a standardized 15-minute physical and UV quality inspection. Once approved, the refund is initiated within <strong>24 to 48 hours</strong> directly through the Cashfree payment gateway to your original bank account or UPI ID.
+            Upon our logistics courier collecting the garment from your doorstep, it is delivered to our regional hub for a standardized 15-minute physical and UV quality inspection. Once approved, the refund is initiated within <strong>24 to 48 hours</strong> directly to your original payment method (bank account, card, or UPI ID).
           </p>
         </section>
 

@@ -242,7 +242,7 @@ export function Footer() {
           <p>© 2026 BlinkWear.in. All rights reserved.</p>
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-center">
             <span className="flex items-center gap-1">
-              Secured with <span className="font-semibold text-neutral-300">Cashfree Payments</span>
+              Secured with <span className="font-semibold text-neutral-300">256-Bit SSL Encryption</span>
             </span>
             <span className="hidden sm:inline">•</span>
             <span className="flex items-center gap-1">

@@ -22,7 +22,7 @@ export default function FAQPage() {
   const faqs = [
     {
       q: 'How does renting an outfit work on BlinkWear?',
-      a: 'Browse our designer collection, select your event date and rental duration (typically 3, 5, or 7+ days), and proceed to secure Cashfree checkout. We deliver the outfit freshly sanitized and steam-pressed 24 to 48 hours before your event. When your rental period concludes, pack it in the provided prepaid garment bag, and our courier will collect it from your doorstep.',
+      a: 'Browse our designer collection, select your event date and rental duration (typically 3, 5, or 7+ days), and proceed to secure checkout. We deliver the outfit freshly sanitized and steam-pressed 24 to 48 hours before your event. When your rental period concludes, pack it in the provided prepaid garment bag, and our courier will collect it from your doorstep.',
     },
     {
       q: 'Do I need to dry clean or wash the outfit before returning it?',
@@ -30,7 +30,7 @@ export default function FAQPage() {
     },
     {
       q: 'When and how is my security deposit refunded?',
-      a: 'Your refundable security deposit is initiated within 24 to 48 hours of our quality inspection team receiving the garment at our regional hub. The funds are credited directly back to the original payment method (bank account / UPI) via Cashfree.',
+      a: 'Your refundable security deposit is initiated within 24 to 48 hours of our quality inspection team receiving the garment at our regional hub. The funds are credited directly back to the original payment method (bank account / UPI).',
     },
     {
       q: 'What if the outfit does not fit properly upon delivery?',

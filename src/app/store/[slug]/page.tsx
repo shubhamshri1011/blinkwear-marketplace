@@ -179,7 +179,7 @@ export default async function SellerStorePage({ params }: PageProps) {
     image: store.banner_url || store.logo_url || 'https://blinkwear.in/icon.png',
     priceRange: '₹₹ - ₹₹₹',
     currenciesAccepted: 'INR',
-    paymentAccepted: 'Cashfree, UPI, Net Banking, Credit Card',
+    paymentAccepted: 'UPI, Net Banking, Credit Card, Debit Card',
     ...(store.show_contact && store.whatsapp_number
       ? { telephone: store.whatsapp_number }
       : {}),

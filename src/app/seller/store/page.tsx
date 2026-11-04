@@ -389,7 +389,7 @@ export default function SellerStoreSettingsPage() {
           error.message?.includes('does not exist') ||
           error.message?.includes('column'));
 
-      if (isSchemaOrColumnError) {
+      if (error && isSchemaOrColumnError) {
         console.warn(
           'Storefront V2 extended columns missing in Supabase schema cache; falling back to core identity fields:',
           error.message
